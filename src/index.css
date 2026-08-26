@@ -1,0 +1,554 @@
+/* =========================================================
+   KneeSense NER — design system
+   Warm and approachable, not a cold clinical form. A muted
+   teal-green carries primary actions and selected state —
+   evokes health/calm without hospital blue. Ink is a warm
+   near-black brown, backgrounds a soft ivory/sand, corners
+   generously rounded, with gentle warm-toned shadows for a
+   touch of physical, tactile depth.
+   Risk-level colors (green/amber/terracotta-red) are semantic
+   signals, not brand color, and stay clearly distinguishable
+   from the teal accent.
+   ========================================================= */
+
+:root {
+  --color-bg: #fdfaf5;
+  --color-surface: #f6efe4;
+  --color-surface-raised: #fffdf9;
+  --color-ink: #362a1f;
+  --color-ink-soft: #8a7862;
+  --color-ink-faint: #b7a993;
+
+  --color-blue: #2f8f7a;
+  --color-blue-dark: #1f6e5c;
+  --color-blue-tint: #e6f3ee;
+
+  --color-border: #e8ddcd;
+
+  --color-danger: #c6553d;
+  --color-danger-tint: #fbeae3;
+  /* Deliberately a warmer, more yellow-leaning green than the teal accent
+     above (hue ~100 vs ~166) — close hues would make "low risk" read as
+     just another selected-teal state instead of a distinct safe signal. */
+  --color-success: #4f8f3f;
+  --color-success-tint: #ecf4e6;
+  --color-warning: #b6842a;
+  --color-warning-tint: #faf0da;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --shadow-sm: 0 1px 3px rgba(54, 42, 31, 0.08), 0 1px 2px rgba(54, 42, 31, 0.05);
+  --shadow-md: 0 6px 20px rgba(54, 42, 31, 0.10), 0 2px 6px rgba(54, 42, 31, 0.06);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light;
+  font: 16px/1.5 var(--font);
+  color: var(--color-ink);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- Page shell ---------- */
+
+.page {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--color-ink);
+}
+
+.page-subtitle {
+  font-size: 15px;
+  color: var(--color-ink-soft);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  appearance: none;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  text-align: center;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-block {
+  width: 100%;
+  display: block;
+}
+
+.btn-lg {
+  min-height: 56px;
+  font-size: 18px;
+  padding: 0 var(--space-5);
+}
+
+.btn-md {
+  min-height: 44px;
+  font-size: 15px;
+  padding: 0 var(--space-4);
+}
+
+.btn-primary {
+  background: var(--color-blue);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:not(:disabled):hover {
+  background: var(--color-blue-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-border);
+}
+.btn-secondary:not(:disabled):hover {
+  border-color: var(--color-ink-faint);
+  background: var(--color-surface);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn-danger:not(:disabled):hover {
+  background: #a8442f;
+}
+
+/* Large choice buttons (knee side, injury yes/no, assistance yes/no, etc.) */
+.choice-btn {
+  width: 100%;
+  min-height: 60px;
+  font-size: 17px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.choice-btn.is-selected {
+  background: var(--color-blue);
+  border-color: var(--color-blue);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+}
+
+.choice-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+.choice-grid.cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ---------- Scale buttons (pain / difficulty ratings) ---------- */
+
+.scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.scale-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.scale-btn {
+  min-width: 48px;
+  min-height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.scale-btn.is-selected {
+  background: var(--color-blue);
+  border-color: var(--color-blue);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.scale-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-ink-faint);
+}
+
+/* ---------- Form fields ---------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.input, .select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+}
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--color-blue);
+}
+
+/* ---------- Cards / callouts ---------- */
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-info {
+  background: var(--color-blue-tint);
+  color: var(--color-blue-dark);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-muted {
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  font-size: 13px;
+}
+
+/* ---------- List rows (patients) ---------- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.list-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.list-row-title {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.list-row-meta {
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  width: fit-content;
+}
+.badge-pending {
+  background: var(--color-surface);
+  color: var(--color-ink-faint);
+}
+.badge-synced {
+  background: var(--color-success-tint);
+  color: var(--color-success);
+}
+
+/* ---------- Data table (results / report summaries) ---------- */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table td {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+.data-table td:first-child {
+  color: var(--color-ink-soft);
+}
+.data-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+.data-table tr.total td {
+  font-weight: 700;
+  color: var(--color-ink);
+  padding-top: var(--space-4);
+}
+
+/* ---------- Risk result banner ---------- */
+
+.risk-banner {
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+.risk-banner-low {
+  background: var(--color-success-tint);
+}
+.risk-banner-low .risk-heading {
+  color: var(--color-success);
+}
+.risk-banner-moderate {
+  background: var(--color-warning-tint);
+}
+.risk-banner-moderate .risk-heading {
+  color: var(--color-warning);
+}
+.risk-banner-high {
+  background: var(--color-danger-tint);
+}
+.risk-banner-high .risk-heading {
+  color: var(--color-danger);
+}
+.risk-heading {
+  font-size: 20px;
+  font-weight: 700;
+}
+.risk-guidance {
+  font-size: 14px;
+  color: var(--color-ink);
+}
+
+/* ---------- Big tap counters (walk test) ---------- */
+
+.tap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.tap-btn {
+  width: 100%;
+  min-height: 100px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.tap-btn-accent {
+  background: var(--color-blue-tint);
+  border-color: var(--color-blue-tint);
+  color: var(--color-blue-dark);
+}
+.tap-count {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: var(--space-1);
+}
+
+.timer-display {
+  font-size: 40px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+/* ---------- Dashboard: stat cards + simple bar charts ---------- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.stat-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--color-ink-soft);
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 32px;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 13px;
+}
+.bar-label {
+  color: var(--color-ink-soft);
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-track {
+  height: 12px;
+  background: var(--color-surface);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-blue);
+  transition: width 0.3s ease;
+}
+.bar-fill-low {
+  background: var(--color-success);
+}
+.bar-fill-moderate {
+  background: var(--color-warning);
+}
+.bar-fill-high {
+  background: var(--color-danger);
+}
+.bar-count {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-ink);
+}

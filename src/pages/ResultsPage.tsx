@@ -3,14 +3,15 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { computeAndSaveRiskScore } from '../db/repositories/riskScores'
 import { generateReport } from '../db/repositories/reports'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon, type IconName } from '../components/Icon'
 import type { MessageKey } from '../i18n/translations/en'
 import type { RiskScoreBreakdown } from '../lib/riskScoring'
 import type { RiskCategory } from '../types/models'
 
-const CATEGORY_KEYS: Record<RiskCategory, { heading: MessageKey; guidance: MessageKey }> = {
-  low: { heading: 'results.lowHeading', guidance: 'results.lowGuidance' },
-  moderate: { heading: 'results.moderateHeading', guidance: 'results.moderateGuidance' },
-  high: { heading: 'results.highHeading', guidance: 'results.highGuidance' },
+const CATEGORY_KEYS: Record<RiskCategory, { heading: MessageKey; guidance: MessageKey; icon: IconName; iconColor: string }> = {
+  low: { heading: 'results.lowHeading', guidance: 'results.lowGuidance', icon: 'check-circle', iconColor: 'var(--color-success)' },
+  moderate: { heading: 'results.moderateHeading', guidance: 'results.moderateGuidance', icon: 'alert-triangle', iconColor: 'var(--color-warning)' },
+  high: { heading: 'results.highHeading', guidance: 'results.highGuidance', icon: 'alert-octagon', iconColor: 'var(--color-danger)' },
 }
 
 const COMPONENT_KEYS: { key: keyof RiskScoreBreakdown; label: MessageKey; weight: string }[] = [
@@ -74,6 +75,9 @@ export default function ResultsPage() {
   return (
     <main className="page">
       <div className={`risk-banner risk-banner-${breakdown.riskCategory}`}>
+        <div className="risk-icon-badge" style={{ color: copy.iconColor }}>
+          <Icon name={copy.icon} size={28} />
+        </div>
         <span className="risk-heading">{t(copy.heading)}</span>
         <span className="risk-guidance">{t(copy.guidance)}</span>
       </div>
@@ -104,7 +108,9 @@ export default function ResultsPage() {
           onClick={onGenerateReport}
           disabled={reportStatus === 'generating'}
           className="btn btn-primary btn-lg btn-block"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
+          <Icon name="file-text" size={18} />
           {reportStatus === 'generating' ? t('results.generatingReport') : t('results.downloadReport')}
         </button>
         {reportStatus === 'done' && (

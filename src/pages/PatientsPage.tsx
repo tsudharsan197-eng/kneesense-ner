@@ -4,6 +4,7 @@ import { createPatient, listPatients } from '../db/repositories/patients'
 import { pendingOutboxCount } from '../db/outbox'
 import { useTranslation } from '../i18n/I18nContext'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
+import { Icon } from '../components/Icon'
 import type { AgeGroup, Patient } from '../types/models'
 
 const AGE_GROUPS: AgeGroup[] = ['18-30', '31-45', '46-60', '60+']
@@ -49,29 +50,26 @@ export default function PatientsPage() {
     <main className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <LanguageSwitcher />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            style={{ background: 'none', border: 'none', color: 'var(--color-ink-soft)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
+        <div style={{ display: 'flex', gap: 14 }}>
+          <button type="button" onClick={() => navigate('/dashboard')} className="nav-link">
+            <Icon name="chart-bar" size={16} />
             Dashboard
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/account')}
-            style={{ background: 'none', border: 'none', color: 'var(--color-ink-soft)', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
+          <button type="button" onClick={() => navigate('/account')} className="nav-link">
+            <Icon name="user" size={16} />
             Account
           </button>
         </div>
       </div>
 
-      <div className="page-header">
-        <h1 className="page-title">{t('app.title')}</h1>
-        <p className="page-subtitle">
-          {pending > 0 ? t('patients.subtitlePending', { count: pending }) : t('patients.subtitleSynced')}
-        </p>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="user-plus" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">{t('app.title')}</h1>
+          <p className="page-subtitle">
+            {pending > 0 ? t('patients.subtitlePending', { count: pending }) : t('patients.subtitleSynced')}
+          </p>
+        </div>
       </div>
 
       <form onSubmit={onRegister} className="section">
@@ -123,12 +121,15 @@ export default function PatientsPage() {
         <div className="list">
           {patients.map((p) => (
             <div key={p.id} className="list-row">
-              <div className="list-row-main">
-                <span className="list-row-title">{p.patient_code}</span>
-                <span className="list-row-meta">{p.age_group}{p.location ? ` · ${p.location}` : ''}</span>
-                <span className={`badge ${p.synced ? 'badge-synced' : 'badge-pending'}`}>
-                  {p.synced ? t('patients.synced') : t('patients.pendingSync')}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                <div className="avatar-badge"><Icon name="user" size={18} /></div>
+                <div className="list-row-main">
+                  <span className="list-row-title">{p.patient_code}</span>
+                  <span className="list-row-meta">{p.age_group}{p.location ? ` · ${p.location}` : ''}</span>
+                  <span className={`badge ${p.synced ? 'badge-synced' : 'badge-pending'}`}>
+                    {p.synced ? t('patients.synced') : t('patients.pendingSync')}
+                  </span>
+                </div>
               </div>
               <button
                 type="button"

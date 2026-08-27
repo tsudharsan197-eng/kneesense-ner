@@ -7,6 +7,7 @@ import { SimulatedKneeExtensionSource, type SensorSource } from '../lib/sensorSo
 import { createBleSensorSource, isConnected as isSensorConnected } from '../lib/bleConnection'
 import { PoseCameraSource, type CameraAngleSample, type KneeSide } from '../lib/cameraSource'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon } from '../components/Icon'
 import type { AngleSample } from '../lib/motionAnalysis'
 import type { CameraFeatures, ExerciseCapture } from '../types/models'
 
@@ -98,9 +99,12 @@ export default function ExerciseCapturePage() {
 
   return (
     <main className="page">
-      <div className="page-header">
-        <h1 className="page-title">{t('kneeExtension.title')}</h1>
-        <p className="page-subtitle">{t('kneeExtension.subtitle')}</p>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="activity" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">{t('kneeExtension.title')}</h1>
+          <p className="page-subtitle">{t('kneeExtension.subtitle')}</p>
+        </div>
       </div>
 
       <p className="card-info">
@@ -113,7 +117,9 @@ export default function ExerciseCapturePage() {
             type="button"
             onClick={() => setUseCamera((v) => !v)}
             className={`choice-btn${useCamera ? ' is-selected' : ''}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
+            <Icon name="camera" size={18} />
             {useCamera ? t('kneeExtension.cameraEnabled') : t('kneeExtension.enableCamera')}
           </button>
           <button type="button" onClick={onStart} className="btn btn-primary btn-lg btn-block">

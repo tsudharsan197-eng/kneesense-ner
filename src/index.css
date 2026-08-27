@@ -11,6 +11,17 @@
    from the teal accent.
    ========================================================= */
 
+/* Self-hosted (not loaded from Google's CDN at runtime) so the app keeps
+   working fully offline — one variable-font file covers weights 500-700.
+   See public/fonts/quicksand-variable.woff2. */
+@font-face {
+  font-family: 'Quicksand';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('/fonts/quicksand-variable.woff2') format('woff2');
+}
+
 :root {
   --color-bg: #fdfaf5;
   --color-surface: #f6efe4;
@@ -50,6 +61,9 @@
   --space-6: 32px;
 
   --font: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* Headings/emphasis only — falls back to --font automatically for
+     Bengali/Assamese text, since Quicksand has no non-Latin glyphs. */
+  --font-display: 'Quicksand', var(--font);
 
   color-scheme: light;
   font: 16px/1.5 var(--font);
@@ -107,9 +121,10 @@ button, input, select, textarea {
 }
 
 .page-title {
-  font-size: 26px;
+  font-family: var(--font-display);
+  font-size: 27px;
   font-weight: 700;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.2px;
   color: var(--color-ink);
 }
 
@@ -133,7 +148,8 @@ button, input, select, textarea {
 }
 
 .section-title {
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-size: 18px;
   font-weight: 600;
   color: var(--color-ink);
 }
@@ -435,7 +451,8 @@ button, input, select, textarea {
   color: var(--color-danger);
 }
 .risk-heading {
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 22px;
   font-weight: 700;
 }
 .risk-guidance {
@@ -469,13 +486,15 @@ button, input, select, textarea {
 }
 .tap-count {
   display: block;
-  font-size: 32px;
+  font-family: var(--font-display);
+  font-size: 34px;
   font-weight: 700;
   margin-top: var(--space-1);
 }
 
 .timer-display {
-  font-size: 40px;
+  font-family: var(--font-display);
+  font-size: 42px;
   font-weight: 700;
   text-align: center;
   color: var(--color-ink);
@@ -498,7 +517,8 @@ button, input, select, textarea {
   box-shadow: var(--shadow-sm);
 }
 .stat-value {
-  font-size: 28px;
+  font-family: var(--font-display);
+  font-size: 30px;
   font-weight: 700;
   color: var(--color-ink);
 }
@@ -551,4 +571,70 @@ button, input, select, textarea {
   text-align: right;
   font-weight: 600;
   color: var(--color-ink);
+}
+
+/* ---------- Icon usage: nav links, page-header badges, avatars ---------- */
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--color-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+.nav-link:hover {
+  color: var(--color-blue-dark);
+}
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.page-icon-badge {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--color-blue-tint);
+  color: var(--color-blue-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.risk-icon-badge {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-raised);
+}
+
+.avatar-badge {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--color-blue-tint);
+  color: var(--color-blue-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lang-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-ink-faint);
 }

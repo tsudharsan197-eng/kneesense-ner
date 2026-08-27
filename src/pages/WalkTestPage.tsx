@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ScaleButtons } from '../components/ScaleButtons'
 import { saveWalkTest } from '../db/repositories/walkTest'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon } from '../components/Icon'
 import type { WalkTestMetrics } from '../types/models'
 
 type Phase = 'setup' | 'walking' | 'rating' | 'done'
@@ -79,9 +80,12 @@ export default function WalkTestPage() {
   if (phase === 'setup') {
     return (
       <main className="page">
-        <div className="page-header">
-          <h1 className="page-title">{t('walkTest.title')}</h1>
-          <p className="page-subtitle">{t('walkTest.setupSubtitle')}</p>
+        <div className="page-header-row">
+          <div className="page-icon-badge"><Icon name="footprints" size={22} /></div>
+          <div className="page-header">
+            <h1 className="page-title">{t('walkTest.title')}</h1>
+            <p className="page-subtitle">{t('walkTest.setupSubtitle')}</p>
+          </div>
         </div>
         <div className="choice-grid">
           {DISTANCE_OPTIONS.map((opt) => (
@@ -178,8 +182,13 @@ export default function WalkTestPage() {
   // done
   return (
     <main className="page">
-      <div className="page-header">
-        <h1 className="page-title">{t('walkTest.savedTitle')}</h1>
+      <div className="page-header-row">
+        <div className="page-icon-badge" style={{ background: 'var(--color-success-tint)', color: 'var(--color-success)' }}>
+          <Icon name="check-circle" size={22} />
+        </div>
+        <div className="page-header">
+          <h1 className="page-title">{t('walkTest.savedTitle')}</h1>
+        </div>
       </div>
       {result && (
         <table className="data-table">

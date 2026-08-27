@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDashboardStats, type DashboardStats } from '../db/repositories/dashboard'
 import { BarChart } from '../components/BarChart'
+import { Icon } from '../components/Icon'
 import type { RiskCategory } from '../types/models'
 
 const RISK_FILL: Record<RiskCategory, string> = {
@@ -28,9 +29,12 @@ export default function DashboardPage() {
 
   return (
     <main className="page">
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Computed from data on this device — works fully offline, no sync required.</p>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="chart-bar" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Computed from data on this device — works fully offline, no sync required.</p>
+        </div>
       </div>
 
       <div className="stat-grid">

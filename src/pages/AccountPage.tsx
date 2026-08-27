@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser, isAuthConfigured, signIn, signOut, signUp } from '../lib/supabaseAuth'
+import { Icon } from '../components/Icon'
 
 type Mode = 'signIn' | 'signUp'
 
@@ -51,8 +52,11 @@ export default function AccountPage() {
   if (!isAuthConfigured()) {
     return (
       <main className="page">
-        <div className="page-header">
-          <h1 className="page-title">Account</h1>
+        <div className="page-header-row">
+          <div className="page-icon-badge"><Icon name="user" size={22} /></div>
+          <div className="page-header">
+            <h1 className="page-title">Account</h1>
+          </div>
         </div>
         <p className="card-info">
           No Supabase project is configured for this app, so cloud accounts aren't available. The app works fully
@@ -70,9 +74,12 @@ export default function AccountPage() {
   if (user) {
     return (
       <main className="page">
-        <div className="page-header">
-          <h1 className="page-title">Account</h1>
-          <p className="page-subtitle">Signed in as {user.email}</p>
+        <div className="page-header-row">
+          <div className="page-icon-badge"><Icon name="user" size={22} /></div>
+          <div className="page-header">
+            <h1 className="page-title">Account</h1>
+            <p className="page-subtitle">Signed in as {user.email}</p>
+          </div>
         </div>
         <p className="card-info">
           New patients you register will be attributed to this account for cloud sync. Signing out doesn't delete
@@ -90,12 +97,15 @@ export default function AccountPage() {
 
   return (
     <main className="page">
-      <div className="page-header">
-        <h1 className="page-title">{mode === 'signIn' ? 'Sign in' : 'Create an account'}</h1>
-        <p className="page-subtitle">
-          Optional — the app works fully offline without this. Signing in attributes the patients you register to
-          your account, so cloud-synced data can be scoped per health worker.
-        </p>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="user" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">{mode === 'signIn' ? 'Sign in' : 'Create an account'}</h1>
+          <p className="page-subtitle">
+            Optional — the app works fully offline without this. Signing in attributes the patients you register to
+            your account, so cloud-synced data can be scoped per health worker.
+          </p>
+        </div>
       </div>
 
       <form onSubmit={onSubmit} className="section">

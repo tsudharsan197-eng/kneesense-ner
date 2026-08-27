@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createSession } from '../db/repositories/sessions'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon } from '../components/Icon'
 import type { AffectedKnee } from '../types/models'
 
 export default function NewSessionPage() {
@@ -31,8 +32,11 @@ export default function NewSessionPage() {
 
   return (
     <main className="page">
-      <div className="page-header">
-        <h1 className="page-title">{t('newSession.title')}</h1>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="activity" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">{t('newSession.title')}</h1>
+        </div>
       </div>
 
       <div className="section">

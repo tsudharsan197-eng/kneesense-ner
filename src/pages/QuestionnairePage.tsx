@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ScaleButtons } from '../components/ScaleButtons'
 import { saveQuestionnaire } from '../db/repositories/questionnaire'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon } from '../components/Icon'
 
 export default function QuestionnairePage() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -54,9 +55,14 @@ export default function QuestionnairePage() {
   if (done) {
     return (
       <main className="page">
-        <div className="page-header">
-          <h1 className="page-title">{t('questionnaire.savedTitle')}</h1>
-          <p className="page-subtitle">{t('questionnaire.savedSubtitle')}</p>
+        <div className="page-header-row">
+          <div className="page-icon-badge" style={{ background: 'var(--color-success-tint)', color: 'var(--color-success)' }}>
+            <Icon name="check-circle" size={22} />
+          </div>
+          <div className="page-header">
+            <h1 className="page-title">{t('questionnaire.savedTitle')}</h1>
+            <p className="page-subtitle">{t('questionnaire.savedSubtitle')}</p>
+          </div>
         </div>
         <button
           type="button"
@@ -71,8 +77,11 @@ export default function QuestionnairePage() {
 
   return (
     <main className="page" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
-      <div className="page-header">
-        <h1 className="page-title">{t('questionnaire.title')}</h1>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="clipboard-list" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">{t('questionnaire.title')}</h1>
+        </div>
       </div>
 
       <div className="section">

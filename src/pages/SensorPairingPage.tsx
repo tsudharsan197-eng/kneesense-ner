@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { calibrate, connect, isConnected } from '../lib/bleConnection'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon } from '../components/Icon'
 
 type Status = 'idle' | 'connecting' | 'connected' | 'calibrating' | 'calibrated' | 'error'
 
@@ -38,9 +39,12 @@ export default function SensorPairingPage() {
 
   return (
     <main className="page">
-      <div className="page-header">
-        <h1 className="page-title">{t('sensorPairing.title')}</h1>
-        <p className="page-subtitle">{t('sensorPairing.subtitle')}</p>
+      <div className="page-header-row">
+        <div className="page-icon-badge"><Icon name="bluetooth" size={22} /></div>
+        <div className="page-header">
+          <h1 className="page-title">{t('sensorPairing.title')}</h1>
+          <p className="page-subtitle">{t('sensorPairing.subtitle')}</p>
+        </div>
       </div>
 
       <p className="card-info">{t('sensorPairing.skipNotice')}</p>

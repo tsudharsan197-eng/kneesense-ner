@@ -4,6 +4,7 @@ import { saveExerciseCapture } from '../db/repositories/exerciseCaptures'
 import { createBleSensorSource, isConnected as isSensorConnected } from '../lib/bleConnection'
 import { SimulatedSitToStandSource, type SensorSource } from '../lib/sensorSource'
 import { useTranslation } from '../i18n/I18nContext'
+import { Icon } from '../components/Icon'
 import type { AngleSample } from '../lib/motionAnalysis'
 import type { ExerciseCapture } from '../types/models'
 
@@ -66,9 +67,12 @@ export default function SitToStandPage() {
   if (phase === 'safety-check') {
     return wrap(
       <>
-        <div className="page-header">
-          <h1 className="page-title">{t('sitToStand.title')}</h1>
-          <p className="page-subtitle">{t('sitToStand.safetyIntro')}</p>
+        <div className="page-header-row">
+          <div className="page-icon-badge"><Icon name="chair" size={22} /></div>
+          <div className="page-header">
+            <h1 className="page-title">{t('sitToStand.title')}</h1>
+            <p className="page-subtitle">{t('sitToStand.safetyIntro')}</p>
+          </div>
         </div>
         <div className="section">
           <h2 className="section-title">{t('sitToStand.safetyQuestion')}</h2>
@@ -102,9 +106,12 @@ export default function SitToStandPage() {
   if (phase === 'ready') {
     return wrap(
       <>
-        <div className="page-header">
-          <h1 className="page-title">{t('sitToStand.title')}</h1>
-          <p className="page-subtitle">{t('sitToStand.readySubtitle')}</p>
+        <div className="page-header-row">
+          <div className="page-icon-badge"><Icon name="chair" size={22} /></div>
+          <div className="page-header">
+            <h1 className="page-title">{t('sitToStand.title')}</h1>
+            <p className="page-subtitle">{t('sitToStand.readySubtitle')}</p>
+          </div>
         </div>
         <p className="card-info">
           {isSensorConnected() ? t('kneeExtension.sensorConnected') : t('kneeExtension.sensorSimulated')}
@@ -137,8 +144,13 @@ export default function SitToStandPage() {
   // done
   return wrap(
     <>
-      <div className="page-header">
-        <h1 className="page-title">{t('sitToStand.resultTitle')}</h1>
+      <div className="page-header-row">
+        <div className="page-icon-badge" style={{ background: 'var(--color-success-tint)', color: 'var(--color-success)' }}>
+          <Icon name="check-circle" size={22} />
+        </div>
+        <div className="page-header">
+          <h1 className="page-title">{t('sitToStand.resultTitle')}</h1>
+        </div>
       </div>
       {result && (
         <table className="data-table">

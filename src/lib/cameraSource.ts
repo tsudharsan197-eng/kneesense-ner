@@ -3,10 +3,17 @@ import { computeConfidence, computeKneeFlexionAngle, type PoseLandmark } from '.
 
 export type KneeSide = 'left' | 'right';
 
+export interface Point2D {
+  x: number;
+  y: number;
+}
+
 export interface CameraAngleSample {
   t: number;
   kneeAngle: number;
   confidence: number;
+  /** Normalized (0-1) image-space landmarks, for drawing a skeleton overlay on the video. */
+  imagePoints: { hip: Point2D; knee: Point2D; ankle: Point2D } | null;
 }
 
 // BlazePose 33-point landmark indices (MediaPipe's standard pose model).
@@ -75,6 +82,10 @@ export class PoseCameraSource {
       // geometrically accurate for an angle than normalized image coords —
       // fall back to image-space landmarks if unavailable.
       const points = (result.worldLandmarks?.[0] ?? result.landmarks?.[0]) as PoseLandmark[] | undefined;
+      // Image-space landmarks (normalized 0-1 relative to the video frame)
+      // are what a skeleton overlay needs to draw on a canvas — these are
+      // always in image coordinates, unlike worldLandmarks.
+      const imagePoints = result.landmarks?.[0] as PoseLandmark[] | undefined;
 
       if (points && points.length > ankleIdx) {
         const hip = points[hipIdx];
@@ -84,6 +95,10 @@ export class PoseCameraSource {
           t: performance.now() - startTime,
           kneeAngle: computeKneeFlexionAngle(hip, knee, ankle),
           confidence: computeConfidence(hip, knee, ankle),
+          imagePoints:
+            imagePoints && imagePoints.length > ankleIdx
+              ? { hip: imagePoints[hipIdx], knee: imagePoints[kneeIdx], ankle: imagePoints[ankleIdx] }
+              : null,
         });
       }
 

@@ -7,7 +7,7 @@ export type SessionStatus = 'draft' | 'completed';
 export type ExerciseType = 'knee_extension' | 'sit_to_stand' | 'walk_test';
 export type AgreementStatus = 'agree' | 'check_filtering' | 'mismatch';
 export type RiskCategory = 'low' | 'moderate' | 'high';
-export type Language = 'en' | 'as' | 'bn' | 'mni' | 'hi' | 'ta';
+export type Language = 'en' | 'as' | 'bn' | 'hi' | 'ta';
 
 export interface Patient {
   id: string;

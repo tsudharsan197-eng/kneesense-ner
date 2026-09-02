@@ -1,5 +1,5 @@
 // Canonical English strings — the source of truth for every translation key.
-// Other locale files (as.ts, bn.ts, mni.ts) are typed against this file's
+// Other locale files (as.ts, bn.ts, hi.ts, ta.ts) are typed against this file's
 // key set, so a missing translation is a compile error, not a silent
 // English fallback slipping through unnoticed.
 export const en = {

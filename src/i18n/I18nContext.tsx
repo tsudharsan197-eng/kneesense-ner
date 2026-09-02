@@ -2,23 +2,21 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { en } from './translations/en';
 import { as } from './translations/as';
 import { bn } from './translations/bn';
-import { mni } from './translations/mni';
 import { hi } from './translations/hi';
 import { ta } from './translations/ta';
 import type { MessageKey } from './translations/en';
 
-export type Language = 'en' | 'as' | 'bn' | 'mni' | 'hi' | 'ta';
+export type Language = 'en' | 'as' | 'bn' | 'hi' | 'ta';
 
 export const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'as', label: 'অসমীয়া' },
   { code: 'bn', label: 'বাংলা' },
-  { code: 'mni', label: 'Manipuri' }, // mirrors English today — see translations/mni.ts
   { code: 'hi', label: 'हिन्दी' },
   { code: 'ta', label: 'தமிழ்' },
 ];
 
-const DICTS: Record<Language, Record<MessageKey, string>> = { en, as, bn, mni, hi, ta };
+const DICTS: Record<Language, Record<MessageKey, string>> = { en, as, bn, hi, ta };
 const STORAGE_KEY = 'kneesense_language';
 
 interface I18nContextValue {

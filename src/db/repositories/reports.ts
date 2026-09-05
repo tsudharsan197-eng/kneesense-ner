@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { jsPDF } from 'jspdf';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { getDb } from '../client';
 import { queueForSync } from '../outbox';
 import { buildReportPdf, type ReportData } from '../../lib/reportGenerator';
 import type { RiskScoreBreakdown } from '../../lib/riskScoring';
-import type { Report } from '../../types/models';
+import type { Language, Report } from '../../types/models';
 import { getPatientById } from './patients';
 import { getSession } from './sessions';
 import { getQuestionnaireForSession } from './questionnaire';
@@ -21,7 +22,7 @@ function fileNameFor(patientCode: string, sessionDate: string): string {
 }
 
 /** Writes the PDF to disk (native) or triggers a browser download (web dev). Returns where it went, for the reports.file_path record. */
-async function persistPdf(doc: ReturnType<typeof buildReportPdf>, fileName: string): Promise<string> {
+async function persistPdf(doc: jsPDF, fileName: string): Promise<string> {
   if (Capacitor.getPlatform() === 'web') {
     doc.save(fileName); // browser download — no persistent filesystem to write to in a plain web build
     return `browser-download:${fileName}`;
@@ -35,7 +36,10 @@ async function persistPdf(doc: ReturnType<typeof buildReportPdf>, fileName: stri
 }
 
 /** Gathers everything for a session, builds the PDF, saves it, and records a `reports` row (queued for sync like any other table). */
-export async function generateReport(sessionId: string): Promise<{ report: Report; savedTo: string }> {
+export async function generateReport(
+  sessionId: string,
+  language: Language = 'en',
+): Promise<{ report: Report; savedTo: string }> {
   const session = await getSession(sessionId);
   if (!session) throw new Error('Session not found');
   const patient = await getPatientById(session.patient_id);
@@ -101,7 +105,7 @@ export async function generateReport(sessionId: string): Promise<{ report: Repor
     riskBreakdown,
   };
 
-  const doc = buildReportPdf(reportData);
+  const doc = await buildReportPdf(reportData, language);
   const fileName = fileNameFor(patient.patient_code, session.session_date);
   const savedTo = await persistPdf(doc, fileName);
 
@@ -111,7 +115,7 @@ export async function generateReport(sessionId: string): Promise<{ report: Repor
     session_id: sessionId,
     generated_at: new Date().toISOString(),
     file_path: savedTo,
-    language: 'en',
+    language,
     synced: 0,
   };
   await db.run(

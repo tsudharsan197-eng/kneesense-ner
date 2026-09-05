@@ -1,6 +1,8 @@
 import { jsPDF } from 'jspdf';
 import type { RiskScoreBreakdown } from './riskScoring';
-import type { AffectedKnee, ExerciseCapture, RiskCategory } from '../types/models';
+import type { AffectedKnee, ExerciseCapture, Language, RiskCategory } from '../types/models';
+import { getReportStrings, needsShapedRendering, type ReportStrings } from './reportStrings';
+import { renderReportToImages } from './canvasReportRenderer';
 
 export interface ReportData {
   patientCode: string;
@@ -39,22 +41,9 @@ export interface ReportData {
   riskBreakdown: RiskScoreBreakdown;
 }
 
-const CATEGORY_HEADING: Record<RiskCategory, string> = {
-  low: 'Low OA-risk markers',
-  moderate: 'Moderate OA-risk markers detected',
-  high: 'High OA-risk markers detected',
-};
-
-const CATEGORY_RECOMMENDATION: Record<RiskCategory, string> = {
-  low: 'No urgent concerns identified. Advise routine monitoring and preventive knee care.',
-  moderate: 'Some risk markers present. Provide preventive guidance and recommend follow-up if symptoms persist or worsen.',
-  high: 'Multiple risk markers present. Further clinical evaluation recommended.',
-};
-
-const DIFFICULTY_LABELS = ['None', 'Mild', 'Moderate', 'Severe'];
-
-/** Builds the offline screening report as a jsPDF document. Caller decides how to persist it (see reports.ts). */
-export function buildReportPdf(data: ReportData): jsPDF {
+/** Native jsPDF text path — fast, and correct for Latin-script languages (English today).
+ * Not used for Tamil: see reportStrings.ts `needsShapedRendering` for why. */
+function buildReportPdfNative(data: ReportData, s: ReportStrings): jsPDF {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const marginX = 48;
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -86,98 +75,122 @@ export function buildReportPdf(data: ReportData): jsPDF {
     line(text, { bold: true, size: 13, gap: 20 });
   };
 
-  line('KneeSense NER — Screening Report', { bold: true, size: 16, gap: 24 });
-  row('Patient ID', data.patientCode);
-  row('Date', new Date(data.sessionDate).toLocaleString());
-  row('Age group', data.ageGroup);
-  if (data.location) row('Location', data.location);
-  row('Knee tested', data.affectedKnee);
-  row('Previous injury', data.previousInjury ? 'Yes' : 'No');
+  const bool = (v: boolean) => (v ? s.yes : s.no);
+
+  line(s.title, { bold: true, size: 16, gap: 24 });
+  row(s.patientId, data.patientCode);
+  row(s.date, new Date(data.sessionDate).toLocaleString());
+  row(s.ageGroup, data.ageGroup);
+  if (data.location) row(s.location, data.location);
+  row(s.kneeTested, data.affectedKnee);
+  row(s.previousInjury, bool(data.previousInjury));
   rule();
 
-  sectionHeading('Symptoms');
-  row('Average pain score (0-10)', data.painScoreAvg?.toFixed(1) ?? 'Not recorded');
-  row('Morning stiffness', data.morningStiffness !== null ? DIFFICULTY_LABELS[data.morningStiffness] : 'Not recorded');
-  row('Swelling', data.swelling !== null ? DIFFICULTY_LABELS[data.swelling] : 'Not recorded');
-  row('Walking difficulty', data.walkingDifficulty !== null ? DIFFICULTY_LABELS[data.walkingDifficulty] : 'Not recorded');
-  row('Stair-climbing difficulty', data.stairClimbingDifficulty !== null ? DIFFICULTY_LABELS[data.stairClimbingDifficulty] : 'Not recorded');
-  row('Standing from chair difficulty', data.standFromChairDifficulty !== null ? DIFFICULTY_LABELS[data.standFromChairDifficulty] : 'Not recorded');
+  sectionHeading(s.symptomsSection);
+  row(s.avgPainScore, data.painScoreAvg?.toFixed(1) ?? s.notRecorded);
+  row(s.morningStiffness, data.morningStiffness !== null ? s.difficultyLabels[data.morningStiffness] : s.notRecorded);
+  row(s.swelling, data.swelling !== null ? s.difficultyLabels[data.swelling] : s.notRecorded);
+  row(s.walkingDifficulty, data.walkingDifficulty !== null ? s.difficultyLabels[data.walkingDifficulty] : s.notRecorded);
+  row(
+    s.stairClimbingDifficulty,
+    data.stairClimbingDifficulty !== null ? s.difficultyLabels[data.stairClimbingDifficulty] : s.notRecorded,
+  );
+  row(
+    s.standFromChairDifficulty,
+    data.standFromChairDifficulty !== null ? s.difficultyLabels[data.standFromChairDifficulty] : s.notRecorded,
+  );
   rule();
 
-  sectionHeading('Seated knee extension');
+  sectionHeading(s.kneeExtensionSection);
   if (data.kneeExtension) {
-    row('Minimum angle', `${data.kneeExtension.min_angle_deg}°`);
-    row('Maximum angle', `${data.kneeExtension.max_angle_deg}°`);
-    row('Range of motion', `${data.kneeExtension.rom_deg}°`);
-    row('Movement smoothness (lower = smoother)', `${data.kneeExtension.smoothness}`);
-    row('Repetitions counted', `${data.kneeExtension.rep_count}`);
+    row(s.minAngle, `${data.kneeExtension.min_angle_deg}°`);
+    row(s.maxAngle, `${data.kneeExtension.max_angle_deg}°`);
+    row(s.rom, `${data.kneeExtension.rom_deg}°`);
+    row(s.smoothness, `${data.kneeExtension.smoothness}`);
+    row(s.repsCounted, `${data.kneeExtension.rep_count}`);
   } else {
-    row('Status', 'Not performed');
+    row(s.status, s.notPerformed);
   }
   rule();
 
-  sectionHeading('Sit-to-stand');
+  sectionHeading(s.sitToStandSection);
   if (data.sitToStand) {
-    row('Minimum angle', `${data.sitToStand.min_angle_deg}°`);
-    row('Maximum angle', `${data.sitToStand.max_angle_deg}°`);
-    row('Range of motion', `${data.sitToStand.rom_deg}°`);
-    row('Movement smoothness (lower = smoother)', `${data.sitToStand.smoothness}`);
-    row('Repetitions counted', `${data.sitToStand.rep_count}`);
+    row(s.minAngle, `${data.sitToStand.min_angle_deg}°`);
+    row(s.maxAngle, `${data.sitToStand.max_angle_deg}°`);
+    row(s.rom, `${data.sitToStand.rom_deg}°`);
+    row(s.smoothness, `${data.sitToStand.smoothness}`);
+    row(s.repsCounted, `${data.sitToStand.rep_count}`);
   } else {
-    row('Status', 'Not performed / skipped for safety');
+    row(s.status, s.notPerformedSkippedSafety);
   }
   rule();
 
-  sectionHeading('Walking test');
+  sectionHeading(s.walkingTestSection);
   if (data.walkTest) {
-    row('Distance', `${data.walkTest.distanceM} m`);
-    row('Time', `${data.walkTest.timeS} s`);
-    row('Speed', `${data.walkTest.speedMps} m/s`);
-    row('Cadence', `${data.walkTest.cadenceSpm} steps/min`);
-    row('Pauses', `${data.walkTest.pauseCount}`);
-    row('Assistance needed', data.walkTest.assistanceNeeded ? 'Yes' : 'No');
+    row(s.distance, `${data.walkTest.distanceM} m`);
+    row(s.time, `${data.walkTest.timeS} s`);
+    row(s.speed, `${data.walkTest.speedMps} m/s`);
+    row(s.cadence, `${data.walkTest.cadenceSpm} steps/min`);
+    row(s.pauses, `${data.walkTest.pauseCount}`);
+    row(s.assistanceNeeded, bool(data.walkTest.assistanceNeeded));
   } else {
-    row('Status', 'Not performed');
+    row(s.status, s.notPerformed);
   }
   rule();
 
-  sectionHeading('Camera cross-check');
+  sectionHeading(s.cameraSection);
   if (data.cameraAvailable) {
-    row('Camera range of motion', `${data.cameraRom}°`);
-    row('Camera confidence', `${data.cameraConfidence}`);
-    row('IMU-camera difference', `${data.imuCameraDiffDeg}°`);
-    row('Agreement', `${data.cameraAgreementStatus}`);
+    row(s.cameraRom, `${data.cameraRom}°`);
+    row(s.cameraConfidence, `${data.cameraConfidence}`);
+    row(s.imuCameraDiff, `${data.imuCameraDiffDeg}°`);
+    row(s.agreement, `${data.cameraAgreementStatus}`);
   } else {
-    row('Status', 'Not performed (IMU-only screening)');
+    row(s.status, s.notPerformedCameraOnly);
   }
   rule();
 
-  sectionHeading('Screening result');
-  line(CATEGORY_HEADING[data.riskCategory], { bold: true, size: 13, gap: 18 });
-  const recLines = doc.splitTextToSize(CATEGORY_RECOMMENDATION[data.riskCategory], pageWidth - marginX * 2);
+  sectionHeading(s.resultSection);
+  line(s.categoryHeading[data.riskCategory], { bold: true, size: 13, gap: 18 });
+  const recLines = doc.splitTextToSize(s.categoryRecommendation[data.riskCategory], pageWidth - marginX * 2);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.text(recLines, marginX, y);
   y += recLines.length * 14 + 8;
 
-  row('Symptoms component (30%)', `${Math.round(data.riskBreakdown.symptomScore * 100)}%`);
-  row('Range of motion component (25%)', `${Math.round(data.riskBreakdown.romScore * 100)}%`);
-  row('Movement quality component (15%)', `${Math.round(data.riskBreakdown.movementQualityScore * 100)}%`);
-  row('Mobility component (20%)', `${Math.round(data.riskBreakdown.mobilityScore * 100)}%`);
-  row('Sensor-camera agreement (10%)', `${Math.round(data.riskBreakdown.agreementScore * 100)}%`);
-  row('Overall weighted score', `${Math.round(data.riskBreakdown.weightedTotal * 100)}%`);
+  row(s.symptomsComponent, `${Math.round(data.riskBreakdown.symptomScore * 100)}%`);
+  row(s.romComponent, `${Math.round(data.riskBreakdown.romScore * 100)}%`);
+  row(s.movementQualityComponent, `${Math.round(data.riskBreakdown.movementQualityScore * 100)}%`);
+  row(s.mobilityComponent, `${Math.round(data.riskBreakdown.mobilityScore * 100)}%`);
+  row(s.agreementComponent, `${Math.round(data.riskBreakdown.agreementScore * 100)}%`);
+  row(s.overall, `${Math.round(data.riskBreakdown.weightedTotal * 100)}%`);
   rule();
 
-  const disclaimer =
-    'This is an automated screening result based on self-reported symptoms and movement-sensor readings. ' +
-    'It identifies possible OA risk markers only and is NOT a medical diagnosis. Osteoarthritis cannot be ' +
-    'confirmed or ruled out by this tool. A qualified clinician should review this result before any clinical ' +
-    'decision is made.';
-  const discLines = doc.splitTextToSize(disclaimer, pageWidth - marginX * 2);
+  const discLines = doc.splitTextToSize(s.disclaimer, pageWidth - marginX * 2);
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(9.5);
   doc.setTextColor(90);
   doc.text(discLines, marginX, y);
 
   return doc;
+}
+
+/** Canvas-rendered path for scripts jsPDF can't shape correctly (Tamil today) — see
+ * canvasReportRenderer.ts. Each page is drawn by the browser (correct shaping) then
+ * placed into the PDF as a full-page image. */
+async function buildReportPdfShaped(data: ReportData, language: Language): Promise<jsPDF> {
+  const { dataUrls, pageWidthPt, pageHeightPt } = await renderReportToImages(data, language);
+  const doc = new jsPDF({ unit: 'pt', format: [pageWidthPt, pageHeightPt] });
+  dataUrls.forEach((dataUrl, i) => {
+    if (i > 0) doc.addPage([pageWidthPt, pageHeightPt]);
+    doc.addImage(dataUrl, 'JPEG', 0, 0, pageWidthPt, pageHeightPt);
+  });
+  return doc;
+}
+
+/** Builds the offline screening report as a jsPDF document. Caller decides how to persist it (see reports.ts). */
+export async function buildReportPdf(data: ReportData, language: Language = 'en'): Promise<jsPDF> {
+  if (needsShapedRendering(language)) {
+    return buildReportPdfShaped(data, language);
+  }
+  return buildReportPdfNative(data, getReportStrings(language));
 }

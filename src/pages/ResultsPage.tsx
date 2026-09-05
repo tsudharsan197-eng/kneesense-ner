@@ -25,7 +25,7 @@ const COMPONENT_KEYS: { key: keyof RiskScoreBreakdown; label: MessageKey; weight
 export default function ResultsPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const [breakdown, setBreakdown] = useState<RiskScoreBreakdown | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reportStatus, setReportStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
@@ -63,7 +63,7 @@ export default function ResultsPage() {
     if (!sessionId) return
     setReportStatus('generating')
     try {
-      const { savedTo } = await generateReport(sessionId)
+      const { savedTo } = await generateReport(sessionId, language)
       setReportInfo(savedTo)
       setReportStatus('done')
     } catch (err) {

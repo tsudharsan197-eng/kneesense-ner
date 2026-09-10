@@ -1,11 +1,13 @@
 // Renders the screening report through an HTML canvas instead of jsPDF's
 // built-in text() call. This exists ONLY for scripts jsPDF can't shape
-// correctly (see reportStrings.ts `needsShapedRendering`) — Tamil's pre-base
-// vowel signs (e.g. ெ in மென்மை) render in the wrong visual position
-// through jsPDF's font-embedding path, because it maps codepoints to glyphs
-// one-to-one with no Indic reordering. A browser's own canvas text renderer
-// does correct complex-script shaping (proven empirically before writing
-// this), so each page is drawn as an image and placed into the PDF.
+// correctly (see reportStrings.ts `needsShapedRendering`) — Indic scripts'
+// pre-base vowel signs (e.g. ெ in மென்மை, ি in हिन्दी/কিছু) render in the
+// wrong visual position through jsPDF's font-embedding path, because it maps
+// codepoints to glyphs one-to-one with no script-aware reordering. Verified
+// empirically for Tamil, Devanagari, and Bengali before writing this — all
+// three garble the same way. A browser's own canvas text renderer does
+// correct complex-script shaping, so each page is drawn as an image and
+// placed into the PDF.
 import type { ReportData } from './reportGenerator';
 import { getReportStrings, type ReportStrings } from './reportStrings';
 import type { Language, RiskCategory } from '../types/models';
@@ -16,22 +18,33 @@ const PAGE_HEIGHT_PT = 841.89;
 const MARGIN_PT = 48;
 const BOTTOM_MARGIN_PT = 48;
 
-const TAMIL_FONT_FAMILY = 'NotoSansTamilReport';
-const TAMIL_FONT_URL = '/fonts/NotoSansTamil-Variable.ttf';
+interface FontConfig {
+  family: string;
+  url: string;
+}
 
-let fontLoadPromise: Promise<void> | null = null;
+// Assamese (as) shares Bengali script (with a few extra letters, e.g. ৰ ৱ)
+// that Noto Sans Bengali also covers, so both use the same font.
+const SHAPED_FONTS: Partial<Record<Language, FontConfig>> = {
+  ta: { family: 'NotoSansTamilReport', url: '/fonts/NotoSansTamil-Variable.ttf' },
+  hi: { family: 'NotoSansDevanagariReport', url: '/fonts/NotoSansDevanagari-Variable.ttf' },
+  bn: { family: 'NotoSansBengaliReport', url: '/fonts/NotoSansBengali-Variable.ttf' },
+  as: { family: 'NotoSansBengaliReport', url: '/fonts/NotoSansBengali-Variable.ttf' },
+};
 
-function ensureTamilFontLoaded(): Promise<void> {
-  if (!fontLoadPromise) {
-    fontLoadPromise = (async () => {
-      const font = new FontFace(TAMIL_FONT_FAMILY, `url(${TAMIL_FONT_URL})`, {
-        weight: '100 900',
-      });
+const fontLoadPromises = new Map<string, Promise<void>>();
+
+function ensureFontLoaded(config: FontConfig): Promise<void> {
+  let promise = fontLoadPromises.get(config.family);
+  if (!promise) {
+    promise = (async () => {
+      const font = new FontFace(config.family, `url(${config.url})`, { weight: '100 900' });
       await font.load();
       document.fonts.add(font);
     })();
+    fontLoadPromises.set(config.family, promise);
   }
-  return fontLoadPromise;
+  return promise;
 }
 
 export interface RenderedReportPages {
@@ -44,7 +57,10 @@ export async function renderReportToImages(
   data: ReportData,
   language: Language,
 ): Promise<RenderedReportPages> {
-  await ensureTamilFontLoaded();
+  const fontConfig = SHAPED_FONTS[language];
+  if (!fontConfig) throw new Error(`No shaped-rendering font configured for language "${language}"`);
+  await ensureFontLoaded(fontConfig);
+  const fontFamily = fontConfig.family;
   const s = getReportStrings(language);
 
   const pageWidthPx = PAGE_WIDTH_PT * SCALE;
@@ -84,7 +100,7 @@ export async function renderReportToImages(
   function setFont(sizePt: number, bold: boolean, italic = false) {
     const weight = bold ? '700' : '400';
     const style = italic ? 'italic' : 'normal';
-    ctx.font = `${style} ${weight} ${sizePt * SCALE}px ${TAMIL_FONT_FAMILY}`;
+    ctx.font = `${style} ${weight} ${sizePt * SCALE}px ${fontFamily}`;
   }
 
   function line(text: string, opts: { bold?: boolean; size?: number; gap?: number } = {}) {
@@ -108,12 +124,31 @@ export async function renderReportToImages(
   }
 
   function row(label: string, value: string) {
-    ensureSpace(16 * SCALE);
+    // Translated labels can run noticeably longer than their English source
+    // (verified empirically — Tamil's smoothness label overflows the fixed
+    // 220pt column and overlaps the value), so the value column isn't a
+    // fixed offset: it's measured per row and pushed right of the label,
+    // falling back to its own indented line when there's no room left.
     setFont(10.5, false);
+    const labelWidth = ctx.measureText(label).width;
+    const valueWidth = ctx.measureText(value).width;
+    const minValueX = marginPx + 220 * SCALE;
+    const gapPx = 12 * SCALE;
+    const valueX = Math.max(minValueX, marginPx + labelWidth + gapPx);
+    const fitsOnOneLine = valueX + valueWidth <= pageWidthPx - marginPx;
+
+    ensureSpace(fitsOnOneLine ? 16 * SCALE : 32 * SCALE);
+    setFont(10.5, false); // ensureSpace may have started a fresh canvas — font must be reapplied
     ctx.fillStyle = '#000000';
     ctx.fillText(label, marginPx, y);
-    ctx.fillText(value, marginPx + 220 * SCALE, y);
-    y += 16 * SCALE;
+    if (fitsOnOneLine) {
+      ctx.fillText(value, valueX, y);
+      y += 16 * SCALE;
+    } else {
+      y += 16 * SCALE;
+      ctx.fillText(value, marginPx + 16 * SCALE, y);
+      y += 16 * SCALE;
+    }
   }
 
   function sectionHeading(text: string) {
@@ -140,12 +175,18 @@ export async function renderReportToImages(
 
   function paragraph(text: string, opts: { size?: number; italic?: boolean; color?: string } = {}) {
     const size = opts.size ?? 11;
+    // wrapText measures with the canvas's current font, so this must run
+    // before ensureSpace/newCanvas ever swaps ctx out from under it.
     setFont(size, false, opts.italic);
-    ctx.fillStyle = opts.color ?? '#000000';
     const maxWidth = pageWidthPx - marginPx * 2;
     const lines = wrapText(text, maxWidth);
     for (const l of lines) {
       ensureSpace(size * 1.4 * SCALE);
+      // newCanvas() (inside ensureSpace) resets the 2D context, including
+      // font — a fresh canvas doesn't inherit the old one's font/fillStyle,
+      // so both must be reapplied on every line, not just once before the loop.
+      setFont(size, false, opts.italic);
+      ctx.fillStyle = opts.color ?? '#000000';
       ctx.fillText(l, marginPx, y);
       y += size * 1.4 * SCALE;
     }

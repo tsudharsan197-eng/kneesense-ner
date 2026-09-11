@@ -30,7 +30,18 @@ export async function signIn(email: string, password: string): Promise<AuthResul
 export async function signUp(email: string, password: string): Promise<AuthResult> {
   const check = requireClient();
   if (!check.ok) return check;
-  const { error } = await supabase!.auth.signUp({ email, password });
+  // Without this, Supabase falls back to the project's dashboard-configured
+  // Site URL for the confirmation email's redirect — easy to leave as the
+  // default localhost:3000 placeholder, which sends real users to a dead
+  // link after they confirm (the confirmation itself still succeeds
+  // server-side, but the redirect hop fails). Deriving it from wherever
+  // signUp() is actually being called from keeps it correct across both
+  // local dev and the deployed site without needing to hardcode either.
+  const { error } = await supabase!.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: window.location.origin },
+  });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 

@@ -12,6 +12,18 @@ export default function QuestionnairePage() {
 
   const DIFFICULTY_LABELS = [t('common.none'), t('common.mild'), t('common.moderate'), t('common.severe')]
 
+  // Pain buttons show words, not numbers — mapped onto the same 0-10 scale
+  // riskScoring.ts expects, using integers only (pain_rest/etc. are smallint
+  // columns in the Supabase mirror; a fractional value like 2.5 would fail
+  // to sync even though local SQLite wouldn't complain).
+  const PAIN_OPTIONS = [
+    { value: 0, label: t('questionnaire.noPain') },
+    { value: 2, label: t('common.mild') },
+    { value: 5, label: t('common.moderate') },
+    { value: 8, label: t('common.severe') },
+    { value: 10, label: t('questionnaire.verySevere') },
+  ]
+
   const [painRest, setPainRest] = useState<number | null>(null)
   const [painWalking, setPainWalking] = useState<number | null>(null)
   const [painBending, setPainBending] = useState<number | null>(null)
@@ -86,10 +98,10 @@ export default function QuestionnairePage() {
 
       <div className="section">
         <div className="section-label">{t('questionnaire.painSectionLabel')}</div>
-        <ScaleButtons label={t('questionnaire.painAtRest')} min={0} max={10} value={painRest} onChange={setPainRest} />
-        <ScaleButtons label={t('questionnaire.painWhileWalking')} min={0} max={10} value={painWalking} onChange={setPainWalking} />
-        <ScaleButtons label={t('questionnaire.painWhileBending')} min={0} max={10} value={painBending} onChange={setPainBending} />
-        <ScaleButtons label={t('questionnaire.painWhileClimbingStairs')} min={0} max={10} value={painStairs} onChange={setPainStairs} />
+        <ScaleButtons label={t('questionnaire.painAtRest')} options={PAIN_OPTIONS} value={painRest} onChange={setPainRest} />
+        <ScaleButtons label={t('questionnaire.painWhileWalking')} options={PAIN_OPTIONS} value={painWalking} onChange={setPainWalking} />
+        <ScaleButtons label={t('questionnaire.painWhileBending')} options={PAIN_OPTIONS} value={painBending} onChange={setPainBending} />
+        <ScaleButtons label={t('questionnaire.painWhileClimbingStairs')} options={PAIN_OPTIONS} value={painStairs} onChange={setPainStairs} />
       </div>
 
       <div className="section">

@@ -10,7 +10,12 @@ export default function QuestionnairePage() {
   const navigate = useNavigate()
   const { t, language } = useTranslation()
 
-  const DIFFICULTY_LABELS = [t('common.none'), t('common.mild'), t('common.moderate'), t('common.severe')]
+  const DIFFICULTY_OPTIONS = [
+    { value: 0, label: t('common.none') },
+    { value: 1, label: t('common.mild') },
+    { value: 2, label: t('common.moderate') },
+    { value: 3, label: t('common.severe') },
+  ]
 
   // Pain buttons show words, not numbers — mapped onto the same 0-10 scale
   // riskScoring.ts expects, using integers only (pain_rest/etc. are smallint
@@ -106,11 +111,11 @@ export default function QuestionnairePage() {
 
       <div className="section">
         <div className="section-label">{t('questionnaire.otherSymptomsLabel')}</div>
-        <ScaleButtons label={t('questionnaire.morningStiffness')} min={0} max={3} value={morningStiffness} onChange={setMorningStiffness} labels={DIFFICULTY_LABELS} />
-        <ScaleButtons label={t('questionnaire.swelling')} min={0} max={3} value={swelling} onChange={setSwelling} labels={DIFFICULTY_LABELS} />
-        <ScaleButtons label={t('questionnaire.walkingDifficulty')} min={0} max={3} value={walkingDifficulty} onChange={setWalkingDifficulty} labels={DIFFICULTY_LABELS} />
-        <ScaleButtons label={t('questionnaire.stairClimbingDifficulty')} min={0} max={3} value={stairClimbingDifficulty} onChange={setStairClimbingDifficulty} labels={DIFFICULTY_LABELS} />
-        <ScaleButtons label={t('questionnaire.standFromChairDifficulty')} min={0} max={3} value={standFromChairDifficulty} onChange={setStandFromChairDifficulty} labels={DIFFICULTY_LABELS} />
+        <ScaleButtons label={t('questionnaire.morningStiffness')} options={DIFFICULTY_OPTIONS} value={morningStiffness} onChange={setMorningStiffness} />
+        <ScaleButtons label={t('questionnaire.swelling')} options={DIFFICULTY_OPTIONS} value={swelling} onChange={setSwelling} />
+        <ScaleButtons label={t('questionnaire.walkingDifficulty')} options={DIFFICULTY_OPTIONS} value={walkingDifficulty} onChange={setWalkingDifficulty} />
+        <ScaleButtons label={t('questionnaire.stairClimbingDifficulty')} options={DIFFICULTY_OPTIONS} value={stairClimbingDifficulty} onChange={setStairClimbingDifficulty} />
+        <ScaleButtons label={t('questionnaire.standFromChairDifficulty')} options={DIFFICULTY_OPTIONS} value={standFromChairDifficulty} onChange={setStandFromChairDifficulty} />
       </div>
 
       <button

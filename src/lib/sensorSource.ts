@@ -1,17 +1,19 @@
 import type { AngleSample } from './motionAnalysis';
 
 export interface SensorSource {
-  start(onSample: (sample: AngleSample) => void): void;
+  start(onSample: (sample: AngleSample) => void, onError?: (error: unknown) => void): void;
   stop(): void;
 }
 
 /**
- * Stand-in for the real ESP32 link (BLE — see README "Next steps") so the
- * capture screen and analysis pipeline are buildable and testable before
- * hardware is wired up. Produces a seated-knee-extension-shaped signal:
- * thigh roughly still, shin swinging between flexed and extended, with
- * noise and small rep-to-rep drift so smoothness/ROM/rep-count all have
- * something realistic to compute over.
+ * Stand-in for the real ESP32 link when no sensor is connected — restored
+ * as a deliberate fallback (project deadline, ESP32 hardware not currently
+ * working) so the capture screens, risk scoring, and report generation can
+ * still be exercised end-to-end. Produces a seated-knee-extension-shaped
+ * signal: thigh roughly still, shin swinging between flexed and extended,
+ * with noise and small rep-to-rep drift so smoothness/ROM/rep-count all
+ * have something realistic to compute over. Every capture that uses this
+ * is recorded with data_source: 'simulated' (see exerciseCaptures.ts).
  */
 export class SimulatedKneeExtensionSource implements SensorSource {
   private intervalId: ReturnType<typeof setInterval> | null = null;
@@ -48,7 +50,7 @@ export class SimulatedKneeExtensionSource implements SensorSource {
 }
 
 /**
- * Same dev-only role as SimulatedKneeExtensionSource, shaped for
+ * Same dev/fallback role as SimulatedKneeExtensionSource, shaped for
  * sit-to-stand instead: the shank stays roughly vertical throughout (feet
  * stay planted), while the thigh does most of the rotation, swinging from
  * ~85deg (seated, thigh horizontal) to ~5deg (standing, thigh vertical) —

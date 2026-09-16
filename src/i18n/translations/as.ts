@@ -37,7 +37,7 @@ export const as: Record<MessageKey, string> = {
   'newSession.continueToQuestionnaire': 'প্ৰশ্নাৱলীলৈ যাওক',
 
   'questionnaire.savedTitle': 'প্ৰশ্নাৱলী সংৰক্ষিত হৈছে',
-  'questionnaire.savedSubtitle': 'পৰৱৰ্তী পদক্ষেপ: দুটা ছেন্সৰ লগাওক আৰু কেলিব্ৰেট কৰক।',
+  'questionnaire.savedSubtitle': 'পৰৱৰ্তী পদক্ষেপ: ছেন্সৰ লগাওক আৰু কেলিব্ৰেট কৰক।',
   'questionnaire.continueToSensorSetup': 'ছেন্সৰ ছেটআপলৈ যাওক',
   'questionnaire.title': 'লক্ষণ প্ৰশ্নাৱলী',
   'questionnaire.painSectionLabel': 'বিষৰ মাত্ৰা',
@@ -58,7 +58,7 @@ export const as: Record<MessageKey, string> = {
 
   'sensorPairing.title': 'ছেন্সৰ লগাওক আৰু কেলিব্ৰেট কৰক',
   'sensorPairing.subtitle':
-    'দুয়োটা ছেন্সৰেই লগাওক — কৰঙণৰ বাহিৰফালে (আঁঠুৰ ৮–১২ ছেঃমিঃ ওপৰত) আৰু ভৰিৰ নলাৰ বাহিৰফালে (আঁঠুৰ ৮–১২ ছেঃমিঃ তলত), দুয়োটাই একেদিশে অৰ্থাৎ কঁকালৰ ফাললৈ মুখ কৰি।',
+    'ছেন্সৰটো ভৰিৰ নলাৰ বাহিৰফালে লগাওক (আঁঠুৰ ৮–১২ ছেঃমিঃ তলত), কঁকালৰ ফাললৈ মুখ কৰি।',
   'sensorPairing.skipNotice':
     'ওচৰত কোনো ESP32 নাই নেকি? এই পদক্ষেপ বাদ দিয়ক — অনুশীলন স্ক্ৰীনসমূহে এটা ছিমুলেটেড ছিগন্যাল ব্যৱহাৰ কৰিব, যাতে আপুনি বাকী এপ্‌টো পৰীক্ষা কৰিব পাৰে।',
   'sensorPairing.step1': '১. সংযোগ কৰক',
@@ -66,15 +66,29 @@ export const as: Record<MessageKey, string> = {
   'sensorPairing.connecting': 'সংযোগ হৈ আছে…',
   'sensorPairing.connected': '✓ সংযুক্ত হৈছে',
   'sensorPairing.step2': '২. কেলিব্ৰেট কৰক',
-  'sensorPairing.calibrateSubtitle': 'ৰোগীৰ ভৰি স্থিৰ ৰাখক, তাৰ পিছত কেলিব্ৰেট কৰক।',
+  'sensorPairing.calibrateSubtitle': 'ৰোগীৰ ভৰি সম্পূৰ্ণৰূপে পোন কৰি স্থিৰ ৰাখক, তাৰ পিছত কেলিব্ৰেট কৰক।',
   'sensorPairing.calibrate': 'কেলিব্ৰেট কৰক',
   'sensorPairing.calibrating': 'কেলিব্ৰেট হৈ আছে…',
   'sensorPairing.calibrated': '✓ কেলিব্ৰেট হৈছে',
   'sensorPairing.continue': 'আগবাঢ়ক',
-  'sensorPairing.skip': 'বাদ দিয়ক (ছিমুলেটেড তথ্য ব্যৱহাৰ কৰক)',
+  'sensorPairing.skip': 'এতিয়াৰ বাবে বাদ দিয়ক',
+
+  // ---------------- Sensor errors (ErrorModal.tsx) ----------------
+  'sensorError.genericTitle': 'ছেন্সৰ সমস্যা',
+  'sensorError.notConnectedTitle': 'কোনো ছেন্সৰ সংযুক্ত নাই',
+  'sensorError.notConnectedMessage':
+    'ৰেকৰ্ডিং আৰম্ভ কৰাৰ আগতে ছেন্সৰ পেয়াৰিং স্ক্ৰীনত ESP32 সংযোগ কৰি কেলিব্ৰেট কৰক। কোনো ছিমুলেটেড বিকল্প নাই — প্ৰকৃত ছেন্সৰ সংযুক্ত নোহোৱাকৈ ৰেকৰ্ডিং আৰম্ভ কৰিব নোৱাৰি।',
+  'sensorError.disconnectedMidCaptureMessage':
+    'ৰেকৰ্ডিঙৰ সময়ত ছেন্সৰ সংযোগ বিচ্ছিন্ন হৈছিল (বেটাৰী আৰু পৰিসৰ পৰীক্ষা কৰক)। আংশিক তথ্য বাতিল কৰা হৈছে — পুনৰ সংযোগ কৰি ৰেকৰ্ডিং পুনৰ কৰক।',
+  'sensorError.startFailedMessage': 'ছেন্সৰৰ পৰা ষ্ট্ৰীমিং আৰম্ভ কৰিব পৰা নগ\'ল। ই অন হৈ আছেনে আৰু পৰিসৰৰ ভিতৰত আছেনে পৰীক্ষা কৰি পুনৰ চেষ্টা কৰক।',
+  'sensorError.goToPairing': 'ছেন্সৰ পেয়াৰিঙলৈ যাওক',
+  'sensorError.dismiss': 'বন্ধ কৰক',
+  'sensorError.lowPowerWarningTitle': 'সম্ভাৱ্য কম-শক্তি ৰিছেট',
+  'sensorError.lowPowerWarningMessage':
+    'ছেন্সৰৰ শেষ ৰানটো ব্ৰাউনআউট ৰিছেটৰ (ইনপুট শক্তি অতি কম হোৱা) কাৰণে বাধাগ্ৰস্ত হৈছিল — সম্ভৱতঃ পাৱাৰ বেংক কমি আহিছে। স্ক্ৰীনিং আৰম্ভ কৰাৰ আগতে পাৱাৰ বেংক পৰীক্ষা কৰক।',
 
   'kneeExtension.title': 'বহি আঁঠু পোন কৰা',
-  'kneeExtension.subtitle': 'ৰোগীক দুটা ছেন্সৰ লগাই বহুৱাওক, তাৰ পিছত লাহে লাহে আঁঠু পোন আৰু মোঁহ কৰিবলৈ কওক, ৬–৮ বাৰ।',
+  'kneeExtension.subtitle': 'ৰোগীক ছেন্সৰ লগাই বহুৱাওক, তাৰ পিছত লাহে লাহে আঁঠু পোন আৰু মোঁহ কৰিবলৈ কওক, ৬–৮ বাৰ।',
   'kneeExtension.sensorConnected': '✓ ESP32 সংযুক্ত — লাইভ ছেন্সৰ তথ্য ব্যৱহাৰ হৈ আছে।',
   'kneeExtension.sensorSimulated': 'এতিয়াও কোনো ESP32 যুক্ত হোৱা নাই — ছিমুলেটেড ছিগন্যাল ব্যৱহাৰ হৈ আছে, যাতে প্ৰক্ৰিয়াটো পৰীক্ষা কৰিব পাৰি।',
   'kneeExtension.enableCamera': 'কেমেৰা ক্ৰছ-চেক অন কৰক (ঐচ্ছিক)',
@@ -109,7 +123,7 @@ export const as: Record<MessageKey, string> = {
   'sitToStand.skippedTitle': 'ছিট-টু-ষ্টেণ্ড পৰীক্ষা বাদ দিয়া হৈছে',
   'sitToStand.skippedSubtitle': 'ৰোগীৰ সুৰক্ষাৰ বাবে বাদ দিয়া হৈছে। ই ফলাফলত প্ৰভাৱ নেপেলাব।',
   'sitToStand.readySubtitle':
-    'ৰোগীক দুটা ছেন্সৰ লগাই এখন স্থিৰ চকীত বহুৱাওক, সম্ভৱ হ\'লে হাত মোঁহি ৰাখক, তাৰ পিছত প্ৰায় ৫ বাৰ সম্পূৰ্ণভাৱে থিয় হ\'বলৈ আৰু বহিবলৈ কওক।',
+    'ৰোগীক ছেন্সৰ লগাই এখন স্থিৰ চকীত বহুৱাওক, সম্ভৱ হ\'লে হাত মোঁহি ৰাখক, তাৰ পিছত প্ৰায় ৫ বাৰ সম্পূৰ্ণভাৱে থিয় হ\'বলৈ আৰু বহিবলৈ কওক।',
   'sitToStand.capturingTitle': 'ৰেকৰ্ড হৈ আছে…',
   'sitToStand.samplesCount': '{count}টা নমুনা',
   'sitToStand.resultTitle': 'ফলাফল',
@@ -142,6 +156,10 @@ export const as: Record<MessageKey, string> = {
 
   'results.calculating': 'হিচাপ কৰি থকা হৈছে…',
   'results.errorTitle': 'ফলাফল হিচাপ কৰিব পৰা নগ\'ল',
+  'results.simulatedDataTitle': 'কেপচাৰৰ সময়ত ছেন্সৰ সংযুক্ত নাছিল',
+  'results.simulatedDataMessage':
+    'আঁঠু-এক্সটেনশন কেপচাৰত প্ৰকৃত ছেন্সৰ ৰিডিঙৰ সলনি এটা ছিমুলেটেড পৰীক্ষা সংকেত ব্যৱহাৰ কৰা হৈছিল — সেই সময়ত কোনো ESP32 সংযুক্ত নাছিল। ছিমুলেটেড তথ্যৰ বাবে জোখ-মাখৰ ফলাফল দেখুৱাব নোৱাৰি। পেয়াৰিং স্ক্ৰীনত ছেন্সৰটো পুনৰ সংযুক্ত কৰক আৰু আঁঠু-এক্সটেনশন কেপচাৰ পুনৰ কৰক।',
+  'results.recaptureButton': 'আঁঠু-এক্সটেনশন কেপচাৰ পুনৰ কৰক',
   'results.lowHeading': 'অষ্টিঅ\'আৰ্থ্ৰাইটিছৰ আশংকা কম',
   'results.lowGuidance': 'কোনো জৰুৰী চিন্তাৰ কাৰণ পোৱা নগ\'ল। নিয়মীয়া পৰ্যবেক্ষণ আৰু প্ৰতিৰোধমূলক আঁঠুৰ যত্নৰ পৰামৰ্শ দিয়ক।',
   'results.moderateHeading': 'অষ্টিঅ\'আৰ্থ্ৰাইটিছৰ আশংকাৰ মধ্যম লক্ষণ পোৱা গ\'ল',

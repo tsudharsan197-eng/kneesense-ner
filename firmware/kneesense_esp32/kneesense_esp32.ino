@@ -1,115 +1,191 @@
 /*
-  KneeSense NER — ESP32 firmware
+  KneeSense NER — ESP32 firmware (single-sensor mode, MPU6050 only)
 
-  Two MPU6050 IMUs (thigh + shin) -> complementary filter -> knee angle
-  stream over BLE. Matches the app-side protocol in src/lib/bleProtocol.ts —
-  if you change UUIDs or the payload layout, update both sides.
+  One MPU6050 (shin-mounted) -> complementary filter -> knee angle stream
+  over BLE. Matches the app-side protocol in src/lib/bleProtocol.ts — if you
+  change the UUIDs or the payload layout, update both sides.
+
+  No calibration button, RGB LED, buzzer, or vibration motor on this board —
+  just the MPU6050. That means there is NO on-device physical feedback at
+  all: calibration is triggered only over BLE (the app's "Calibrate" button
+  on SensorPairingPage sends CMD_CALIBRATE — this always worked over BLE
+  too, so nothing is lost there), and the only status indicators are the
+  Serial Monitor (wiring/boot problems) and the app's own UI (connection
+  state, calibration state, and the error popups it already shows for
+  BLE failures). If you add any of that hardware back later, wire it in
+  parallel to this file's BLE/sensor logic — it never touched the protocol.
+
+  Single-sensor convention: the thigh is assumed to stay still during the
+  seated knee-extension test (it rests on the chair), so the app treats the
+  thigh's angle as a fixed 0° reference and computes knee angle directly
+  from this sensor's angle. That assumption only holds if you CALIBRATE
+  WITH THE LEG FULLY STRAIGHT (see calibrate() below) — calibrating at any
+  other position shifts the whole 0°-reference and throws off every
+  downstream ROM/smoothness number.
+
+  Power: this board runs off USB from a power bank, not a raw LiPo cell, so
+  there is no battery-voltage rail to sense directly. The one available
+  low-power signal is the ESP32's own brownout detector — see
+  lastResetWasBrownout / STATUS_CHAR_UUID below.
 
   ---------------------------------------------------------------------
   WIRING
   ---------------------------------------------------------------------
-  ESP32 3.3V   -> VCC of both MPU6050 sensors
-  ESP32 GND    -> GND of both MPU6050 sensors, buzzer -, LED cathode(s),
-                  transistor emitter, calibration button's pull-down leg
-  ESP32 GPIO21 -> SDA of both MPU6050 sensors
-  ESP32 GPIO22 -> SCL of both MPU6050 sensors
+  ESP32 3.3V   -> MPU6050 VCC
+  ESP32 GND    -> MPU6050 GND
+  ESP32 GPIO21 -> MPU6050 SDA
+  ESP32 GPIO22 -> MPU6050 SCL
 
-  Thigh MPU6050: AD0 -> GND   (I2C address 0x68)
-  Shin  MPU6050: AD0 -> 3.3V  (I2C address 0x69)
-
-  Calibration button: one leg -> 3.3V, other leg -> GPIO4 AND -> 10k
-    resistor -> GND (external pull-down; button press reads HIGH)
-
-  RGB LED (common cathode): R -> 220ohm -> GPIO25, G -> 220ohm -> GPIO26,
-    B -> 220ohm -> GPIO27, cathode -> GND
-
-  Active buzzer: + -> GPIO32, - -> GND
-
-  Vibration motor (needs a transistor — never drive a motor from a GPIO
-  directly): GPIO33 -> 1k resistor -> transistor base (2N2222/BC547) ->
-    transistor emitter -> GND, transistor collector -> motor -,
-    motor + -> 3.3V (or 5V from the power bank if the motor needs it),
-    1N4001/1N4007 flyback diode across the motor terminals (cathode/banded
-    end to motor +, anode to motor -) to protect the transistor from the
-    motor's back-EMF when it switches off.
+  MPU6050: AD0 -> GND (I2C address 0x68), strapped to the outer shin,
+    8-12cm below the knee, pointing toward the hip (same orientation the
+    app's pairing screen instructs for a patient).
 
   ---------------------------------------------------------------------
   LIBRARIES (install via Arduino IDE Library Manager)
   ---------------------------------------------------------------------
-  - Adafruit MPU6050
-  - Adafruit Unified Sensor
-  - Adafruit BusIO
-  (ESP32's built-in BLE library — BLEDevice.h etc. — ships with the
-  ESP32 board package, nothing extra to install for that part.)
+  None beyond what ships with the ESP32 board package (Wire.h for I2C,
+  BLEDevice.h etc. for BLE). The MPU6050 is driven by direct register
+  reads/writes (see "MPU6050 direct register access" below) rather than
+  the Adafruit_MPU6050 library, to skip that library's init overhead.
 */
 
 #include <Wire.h>
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <esp_system.h>
 
 // ---------------- Pins ----------------
 const int PIN_SDA = 21;
 const int PIN_SCL = 22;
-const int PIN_CALIBRATE_BTN = 4;
-const int PIN_LED_R = 25;
-const int PIN_LED_G = 26;
-const int PIN_LED_B = 27;
-const int PIN_BUZZER = 32;
-const int PIN_MOTOR = 33;
 
-// ---------------- I2C addresses ----------------
-const uint8_t THIGH_ADDR = 0x68; // AD0 -> GND
-const uint8_t SHIN_ADDR  = 0x69; // AD0 -> 3.3V
+// ---------------- I2C address ----------------
+const uint8_t MPU_ADDR = 0x68; // AD0 -> GND
 
 // ---------------- BLE protocol (see src/lib/bleProtocol.ts) ----------------
 #define SERVICE_UUID       "b5b2b8a0-0001-4f0a-9e0a-1a2b3c4d5e6f"
 #define ANGLE_CHAR_UUID    "b5b2b8a0-0002-4f0a-9e0a-1a2b3c4d5e6f"
 #define CONTROL_CHAR_UUID  "b5b2b8a0-0003-4f0a-9e0a-1a2b3c4d5e6f"
+#define STATUS_CHAR_UUID   "b5b2b8a0-0004-4f0a-9e0a-1a2b3c4d5e6f"
 
 const uint8_t CMD_CALIBRATE       = 0x01;
 const uint8_t CMD_START_STREAMING = 0x02;
 const uint8_t CMD_STOP_STREAMING  = 0x03;
 
-Adafruit_MPU6050 thighMpu;
-Adafruit_MPU6050 shinMpu;
-bool thighOk = false;
-bool shinOk = false;
+// Bit 0 of the status byte (see STATUS_CHAR_UUID below).
+const uint8_t STATUS_BIT_LAST_RESET_BROWNOUT = 0x01;
+
+bool sensorOk = false;
+// There's no battery-voltage sensing on this board (USB power bank supply
+// has no exposed cell voltage to read) — the ESP32's own brownout detector
+// is the only available low-power signal: it force-resets the chip if the
+// input rail sags too low, and remembers why on the next boot. This is
+// retrospective (found out after the fact, not a live warning), but it's
+// a real signal at zero extra wiring, unlike a made-up placeholder.
+bool lastResetWasBrownout = false;
 
 // Complementary-filter state. Angle convention matches the app's
-// motionAnalysis.ts: this is orientation from vertical, in degrees — NOT
-// knee flexion itself. The app computes knee angle as |shinAngle -
-// thighAngle| on its side, from the raw thigh/shin values streamed here.
-float thighAngle = 0, shinAngle = 0;
-float thighGyroBiasRadS = 0, shinGyroBiasRadS = 0;
+// motionAnalysis.ts: 0deg = leg fully straight (the calibration pose),
+// larger = more bent.
+float shinAngle = 0;
+float gyroBiasRadS = 0;
 unsigned long lastSampleMicros = 0;
 
 BLECharacteristic *angleChar;
 BLECharacteristic *controlChar;
+BLECharacteristic *statusChar;
 bool deviceConnected = false;
 bool streaming = false;
 
-// ---------------- Feedback helpers ----------------
+// ---------------- MPU6050 direct register access ----------------
+// Talks to the MPU6050 directly over Wire per its register map, instead of
+// through Adafruit_MPU6050 — that library's begin()/getEvent() adds I2C
+// round-trips and general-purpose-sensor overhead this firmware doesn't
+// need. Configured to match what the Adafruit library was set to before
+// (so the angle math below is numerically unchanged): +/-4g accel range,
+// +/-500deg/s gyro range, ~21Hz DLPF bandwidth. If you change any of these
+// three, update the matching *_LSB_PER_* constant below too, or every
+// downstream angle will be silently scaled wrong.
+const uint8_t MPU_REG_WHO_AM_I     = 0x75;
+const uint8_t MPU_REG_PWR_MGMT_1   = 0x6B;
+const uint8_t MPU_REG_CONFIG       = 0x1A;
+const uint8_t MPU_REG_GYRO_CONFIG  = 0x1B;
+const uint8_t MPU_REG_ACCEL_CONFIG = 0x1C;
+const uint8_t MPU_REG_ACCEL_XOUT_H = 0x3B;
 
-void setColor(bool r, bool g, bool b) {
-  digitalWrite(PIN_LED_R, r ? HIGH : LOW);
-  digitalWrite(PIN_LED_G, g ? HIGH : LOW);
-  digitalWrite(PIN_LED_B, b ? HIGH : LOW);
+const float ACCEL_LSB_PER_G  = 8192.0f; // AFS_SEL=1 -> +/-4g (see mpuBegin())
+const float GYRO_LSB_PER_DPS = 65.5f;   // FS_SEL=1  -> +/-500deg/s (see mpuBegin())
+const float G_TO_MS2         = 9.80665f;
+// DEG_TO_RAD is NOT redeclared here — the ESP32 core's own Arduino.h already
+// #defines it (0.017453...), and shadowing that macro name breaks the
+// preprocessor in a way that produces a very confusing "expected
+// unqualified-id before numeric constant" error. Use the core's macro
+// directly wherever a deg->rad conversion is needed below.
+
+// Physical-unit accel/gyro reading, same convention Adafruit's
+// sensors_event_t used (accel in m/s^2, gyro in rad/s) so the math below
+// didn't need to change when this replaced that library. Only gyroY is
+// kept (the only axis this firmware's complementary filter uses).
+struct ImuSample {
+  float accelX, accelY, accelZ;
+  float gyroY;
+};
+
+void mpuWriteReg(uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(reg);
+  Wire.write(value);
+  Wire.endTransmission();
 }
 
-void beep(int ms) {
-  digitalWrite(PIN_BUZZER, HIGH);
-  delay(ms);
-  digitalWrite(PIN_BUZZER, LOW);
+uint8_t mpuReadReg(uint8_t reg) {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(reg);
+  Wire.endTransmission(false); // repeated start, keep the bus held for the read
+  Wire.requestFrom(MPU_ADDR, (uint8_t)1);
+  return Wire.available() ? Wire.read() : 0;
 }
 
-void buzzVibrate(int ms) {
-  digitalWrite(PIN_MOTOR, HIGH);
-  delay(ms);
-  digitalWrite(PIN_MOTOR, LOW);
+// Same "did the sensor actually respond" check Adafruit_MPU6050's begin()
+// did (WHO_AM_I must read back 0x68) — kept so sensorOk / the Serial "not
+// found" message still work. Also wakes the chip (it boots with the sleep
+// bit set in PWR_MGMT_1) and configures the same ranges/filter the
+// Adafruit library used to.
+bool mpuBegin() {
+  if (mpuReadReg(MPU_REG_WHO_AM_I) != 0x68) return false;
+  mpuWriteReg(MPU_REG_PWR_MGMT_1, 0x00);   // clear sleep bit
+  mpuWriteReg(MPU_REG_CONFIG, 0x04);       // DLPF_CFG=4 -> ~21Hz accel bandwidth
+  mpuWriteReg(MPU_REG_GYRO_CONFIG, 0x08);  // FS_SEL=1  -> +/-500deg/s
+  mpuWriteReg(MPU_REG_ACCEL_CONFIG, 0x08); // AFS_SEL=1 -> +/-4g
+  return true;
+}
+
+// Burst-reads all 14 accel+temp+gyro bytes in one I2C transaction (starting
+// at ACCEL_XOUT_H, the datasheet's standard contiguous block) and converts
+// to the physical units the rest of this file expects. Temperature and the
+// unused gyro axes are read (the burst is contiguous, so skipping them
+// would need extra transactions, not fewer bytes) and discarded.
+ImuSample mpuReadSample() {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(MPU_REG_ACCEL_XOUT_H);
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_ADDR, (uint8_t)14);
+
+  int16_t rawAx = (Wire.read() << 8) | Wire.read();
+  int16_t rawAy = (Wire.read() << 8) | Wire.read();
+  int16_t rawAz = (Wire.read() << 8) | Wire.read();
+  Wire.read(); Wire.read(); // temperature - unused
+  Wire.read(); Wire.read(); // gyro X - unused (only gyro Y feeds the filter)
+  int16_t rawGy = (Wire.read() << 8) | Wire.read();
+  Wire.read(); Wire.read(); // gyro Z - unused
+
+  ImuSample s;
+  s.accelX = (rawAx / ACCEL_LSB_PER_G) * G_TO_MS2;
+  s.accelY = (rawAy / ACCEL_LSB_PER_G) * G_TO_MS2;
+  s.accelZ = (rawAz / ACCEL_LSB_PER_G) * G_TO_MS2;
+  s.gyroY  = (rawGy / GYRO_LSB_PER_DPS) * DEG_TO_RAD;
+  return s;
 }
 
 // ---------------- Sensor math ----------------
@@ -117,43 +193,40 @@ void buzzVibrate(int ms) {
 // Pitch around the mediolateral (side-to-side) axis, from the
 // accelerometer alone — noisy but drift-free. This is the axis a
 // side-strapped sensor rotates around during knee flexion/extension.
-// If your sensors are mounted with a different face outward, you may
-// need to swap which accel axis feeds this (and the matching gyro axis
-// below) — check with the calibration LED + a slow known motion.
-float accelPitchDeg(sensors_event_t &a) {
-  return atan2(a.acceleration.y, sqrt(a.acceleration.x * a.acceleration.x + a.acceleration.z * a.acceleration.z)) * 180.0 / PI;
+// If your sensor is mounted with a different face outward, you may need
+// to swap which accel axis feeds this (and the matching gyro axis below)
+// — check with a slow known motion via Serial or the app's live angle.
+float accelPitchDeg(const ImuSample &a) {
+  return atan2(a.accelY, sqrt(a.accelX * a.accelX + a.accelZ * a.accelZ)) * 180.0 / PI;
 }
 
-// Calibrates while the leg is held still: takes the accelerometer's
-// current reading as the zero reference for the complementary filter,
-// and measures each gyro's stationary bias so it doesn't integrate a
-// slow drift over a multi-minute screening session.
+// Calibrates while the leg is held straight and still: takes the
+// accelerometer's current reading as the zero (= fully-extended) reference
+// for the complementary filter, and measures the gyro's stationary bias so
+// it doesn't integrate a slow drift over a multi-minute screening session.
+// MUST be run with the leg fully extended — the app computes knee angle
+// directly from this sensor's angle, so whatever pose it's calibrated in
+// becomes "0 degrees" for the rest of the capture. Only triggered over BLE
+// (CMD_CALIBRATE, via the app's Calibrate button) — there's no physical
+// button on this board.
 void calibrate() {
-  setColor(true, false, false); // red = calibrating, don't move
+  Serial.println("Calibrating — hold the leg straight and still...");
   const int N = 100;
-  float thighSum = 0, shinSum = 0;
-  float thighGyroSum = 0, shinGyroSum = 0;
+  float angleSum = 0;
+  float gyroSum = 0;
 
   for (int i = 0; i < N; i++) {
-    sensors_event_t ta, tg, ttemp, sa, sg, stemp;
-    thighMpu.getEvent(&ta, &tg, &ttemp);
-    shinMpu.getEvent(&sa, &sg, &stemp);
-    thighSum += accelPitchDeg(ta);
-    shinSum  += accelPitchDeg(sa);
-    thighGyroSum += tg.gyro.y;
-    shinGyroSum  += sg.gyro.y;
+    ImuSample s = mpuReadSample();
+    angleSum += accelPitchDeg(s);
+    gyroSum += s.gyroY;
     delay(10);
   }
 
-  thighAngle = thighSum / N;
-  shinAngle = shinSum / N;
-  thighGyroBiasRadS = thighGyroSum / N;
-  shinGyroBiasRadS = shinGyroSum / N;
+  shinAngle = angleSum / N;
+  gyroBiasRadS = gyroSum / N;
   lastSampleMicros = micros();
 
-  setColor(false, true, false); // green = calibrated / ready
-  beep(150);
-  buzzVibrate(150);
+  Serial.println("Calibrated.");
 }
 
 // ---------------- BLE callbacks ----------------
@@ -161,21 +234,24 @@ void calibrate() {
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override {
     deviceConnected = true;
-    setColor(false, false, true); // blue = connected
+    Serial.println("BLE central connected.");
   }
   void onDisconnect(BLEServer *server) override {
     deviceConnected = false;
     streaming = false;
-    setColor(false, true, false);
+    Serial.println("BLE central disconnected — resuming advertising.");
     server->getAdvertising()->start(); // resume advertising so the app can reconnect
   }
 };
 
 class ControlCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *c) override {
-    std::string v = c->getValue();
-    if (v.length() == 0) return;
-    uint8_t cmd = (uint8_t)v[0];
+    // Read the raw byte buffer directly rather than going through
+    // getValue() — that method's return type (std::string vs. Arduino
+    // String) has changed across ESP32 core versions, but getData()/
+    // getLength() are the stable low-level accessors on both.
+    if (c->getLength() == 0) return;
+    uint8_t cmd = c->getData()[0];
     if (cmd == CMD_CALIBRATE) {
       calibrate();
     } else if (cmd == CMD_START_STREAMING) {
@@ -186,8 +262,19 @@ class ControlCallbacks : public BLECharacteristicCallbacks {
   }
 };
 
+// A legacy BLE advertising packet is capped at 31 bytes total. Flags (3
+// bytes) + our 128-bit service UUID (2-byte header + 16 bytes = 18 bytes)
+// already use 21 of those — "KneeSense-NER" as the device name would need
+// 15 more (36 total, over the limit), which can make the ESP32 BLE stack
+// silently drop or split the service UUID out of the primary advertisement.
+// Since the app's requestDevice({services:[SERVICE_UUID]}) filters ON that
+// UUID, a device broadcasting it outside the primary packet may just never
+// show up in the picker even though it's genuinely in range and powered on.
+// Keep this short enough that everything fits in one packet with margin.
+#define BLE_DEVICE_NAME "KS-NER"
+
 void setupBle() {
-  BLEDevice::init("KneeSense-NER");
+  BLEDevice::init(BLE_DEVICE_NAME);
   BLEServer *server = BLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
   BLEService *service = server->createService(SERVICE_UUID);
@@ -198,70 +285,56 @@ void setupBle() {
   controlChar = service->createCharacteristic(CONTROL_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE);
   controlChar->setCallbacks(new ControlCallbacks());
 
+  // Read-once status byte — the app reads this right after connecting (see
+  // bleConnection.ts) rather than subscribing to it, since it only changes
+  // across a reboot, not during a session.
+  statusChar = service->createCharacteristic(STATUS_CHAR_UUID, BLECharacteristic::PROPERTY_READ);
+  uint8_t statusByte = lastResetWasBrownout ? STATUS_BIT_LAST_RESET_BROWNOUT : 0x00;
+  statusChar->setValue(&statusByte, 1);
+
   service->start();
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->start();
+  Serial.println("BLE advertising started as \"" BLE_DEVICE_NAME "\".");
 }
 
 // ---------------- Setup / loop ----------------
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin(PIN_SDA, PIN_SCL);
 
-  pinMode(PIN_CALIBRATE_BTN, INPUT); // external pull-down — see wiring notes
-  pinMode(PIN_LED_R, OUTPUT);
-  pinMode(PIN_LED_G, OUTPUT);
-  pinMode(PIN_LED_B, OUTPUT);
-  pinMode(PIN_BUZZER, OUTPUT);
-  pinMode(PIN_MOTOR, OUTPUT);
-  setColor(false, false, true); // blue = starting up
-
-  thighOk = thighMpu.begin(THIGH_ADDR);
-  shinOk = shinMpu.begin(SHIN_ADDR);
-  if (!thighOk) Serial.println("Thigh MPU6050 (0x68) not found — check wiring/AD0");
-  if (!shinOk) Serial.println("Shin MPU6050 (0x69) not found — check wiring/AD0");
-
-  if (!thighOk || !shinOk) {
-    // Solid red = a sensor didn't respond. Fix wiring and reset the board.
-    setColor(true, false, false);
+  lastResetWasBrownout = (esp_reset_reason() == ESP_RST_BROWNOUT);
+  if (lastResetWasBrownout) {
+    Serial.println("Last reset was caused by a brownout (input voltage sagged too low) — check the power bank/USB supply.");
   }
 
-  for (Adafruit_MPU6050 *mpu : { &thighMpu, &shinMpu }) {
-    mpu->setAccelerometerRange(MPU6050_RANGE_4_G);
-    mpu->setGyroRange(MPU6050_RANGE_500_DEG);
-    mpu->setFilterBandwidth(MPU6050_BAND_21_HZ);
+  Wire.begin(PIN_SDA, PIN_SCL);
+
+  sensorOk = mpuBegin();
+  if (!sensorOk) {
+    Serial.println("MPU6050 (0x68) not found — check wiring/AD0");
+  } else {
+    Serial.println("MPU6050 found and configured.");
   }
 
   setupBle();
 
-  if (thighOk && shinOk) {
-    calibrate(); // initial calibration; re-run any time via the button or a BLE 0x01 command
+  if (sensorOk) {
+    calibrate(); // initial calibration (leg must be straight); re-run any time via a BLE 0x01 command
   }
 }
 
 void loop() {
-  static bool lastBtn = LOW;
-  bool btn = digitalRead(PIN_CALIBRATE_BTN);
-  if (btn == HIGH && lastBtn == LOW && thighOk && shinOk) {
-    calibrate();
-  }
-  lastBtn = btn;
-
-  if (!streaming || !deviceConnected || !thighOk || !shinOk) return;
+  if (!streaming || !deviceConnected || !sensorOk) return;
 
   unsigned long now = micros();
   float dt = (now - lastSampleMicros) / 1000000.0;
   if (dt < 0.02) return; // ~50 Hz cap
   lastSampleMicros = now;
 
-  sensors_event_t ta, tg, ttemp, sa, sg, stemp;
-  thighMpu.getEvent(&ta, &tg, &ttemp);
-  shinMpu.getEvent(&sa, &sg, &stemp);
-
-  float thighAccelAngle = accelPitchDeg(ta);
-  float shinAccelAngle = accelPitchDeg(sa);
+  ImuSample s = mpuReadSample();
+  float accelAngle = accelPitchDeg(s);
 
   // Complementary filter: mostly trust the integrated (bias-corrected)
   // gyro rate for smooth, low-latency motion, and slowly pull toward the
@@ -270,14 +343,14 @@ void loop() {
   // — raise it for smoother-but-slower drift correction, lower it if the
   // angle visibly drifts during a long capture.
   const float ALPHA = 0.98;
-  thighAngle = ALPHA * (thighAngle + (tg.gyro.y - thighGyroBiasRadS) * dt * 180.0 / PI) + (1 - ALPHA) * thighAccelAngle;
-  shinAngle  = ALPHA * (shinAngle  + (sg.gyro.y - shinGyroBiasRadS) * dt * 180.0 / PI) + (1 - ALPHA) * shinAccelAngle;
+  shinAngle = ALPHA * (shinAngle + (s.gyroY - gyroBiasRadS) * dt * 180.0 / PI) + (1 - ALPHA) * accelAngle;
 
-  uint8_t payload[12];
+  // 8-byte payload: uint32 millis-since-boot, float32 angle (see
+  // src/lib/bleProtocol.ts — single-sensor mode dropped the second float).
+  uint8_t payload[8];
   uint32_t t = millis();
   memcpy(payload, &t, 4);
-  memcpy(payload + 4, &thighAngle, 4);
-  memcpy(payload + 8, &shinAngle, 4);
-  angleChar->setValue(payload, 12);
+  memcpy(payload + 4, &shinAngle, 4);
+  angleChar->setValue(payload, 8);
   angleChar->notify();
 }

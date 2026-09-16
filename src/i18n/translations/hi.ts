@@ -37,7 +37,7 @@ export const hi: Record<MessageKey, string> = {
   'newSession.continueToQuestionnaire': 'प्रश्नावली पर जाएँ',
 
   'questionnaire.savedTitle': 'प्रश्नावली सहेज ली गई',
-  'questionnaire.savedSubtitle': 'अगला कदम: दोनों सेंसर लगाएँ और कैलिब्रेट करें।',
+  'questionnaire.savedSubtitle': 'अगला कदम: सेंसर लगाएँ और कैलिब्रेट करें।',
   'questionnaire.continueToSensorSetup': 'सेंसर सेटअप पर जाएँ',
   'questionnaire.title': 'लक्षण प्रश्नावली',
   'questionnaire.painSectionLabel': 'दर्द स्कोर',
@@ -58,7 +58,7 @@ export const hi: Record<MessageKey, string> = {
 
   'sensorPairing.title': 'सेंसर लगाएँ और कैलिब्रेट करें',
   'sensorPairing.subtitle':
-    'दोनों सेंसर लगाएँ — जांघ के बाहरी हिस्से पर (घुटने से 8–12 सेमी ऊपर) और पिंडली के बाहरी हिस्से पर (घुटने से 8–12 सेमी नीचे), दोनों एक ही दिशा में यानी कूल्हे की ओर।',
+    'सेंसर लगाएँ — पिंडली के बाहरी हिस्से पर (घुटने से 8–12 सेमी नीचे), कूल्हे की ओर मुख करके।',
   'sensorPairing.skipNotice':
     'पास में कोई ESP32 नहीं है? यह चरण छोड़ दें — व्यायाम स्क्रीन एक सिम्युलेटेड सिग्नल पर वापस चली जाएँगी ताकि आप बाकी ऐप जांच सकें।',
   'sensorPairing.step1': '1. कनेक्ट करें',
@@ -66,15 +66,29 @@ export const hi: Record<MessageKey, string> = {
   'sensorPairing.connecting': 'कनेक्ट हो रहा है…',
   'sensorPairing.connected': '✓ कनेक्टेड',
   'sensorPairing.step2': '2. कैलिब्रेट करें',
-  'sensorPairing.calibrateSubtitle': 'रोगी का पैर स्थिर रखवाएँ, फिर कैलिब्रेट करें।',
+  'sensorPairing.calibrateSubtitle': 'रोगी का पैर पूरी तरह सीधा करवाएँ और स्थिर रखवाएँ, फिर कैलिब्रेट करें।',
   'sensorPairing.calibrate': 'कैलिब्रेट करें',
   'sensorPairing.calibrating': 'कैलिब्रेट हो रहा है…',
   'sensorPairing.calibrated': '✓ कैलिब्रेटेड',
   'sensorPairing.continue': 'आगे बढ़ें',
-  'sensorPairing.skip': 'छोड़ें (सिम्युलेटेड डेटा उपयोग करें)',
+  'sensorPairing.skip': 'फिलहाल छोड़ें',
+
+  // ---------------- Sensor errors (ErrorModal.tsx) ----------------
+  'sensorError.genericTitle': 'सेंसर त्रुटि',
+  'sensorError.notConnectedTitle': 'कोई सेंसर कनेक्ट नहीं है',
+  'sensorError.notConnectedMessage':
+    'रिकॉर्डिंग शुरू करने से पहले सेंसर पेयरिंग स्क्रीन पर ESP32 कनेक्ट करें और कैलिब्रेट करें। कोई सिम्युलेटेड विकल्प नहीं है — वास्तविक सेंसर कनेक्ट किए बिना रिकॉर्डिंग शुरू नहीं हो सकती।',
+  'sensorError.disconnectedMidCaptureMessage':
+    'रिकॉर्डिंग के दौरान सेंसर डिस्कनेक्ट हो गया (बैटरी और रेंज जांचें)। आंशिक डेटा हटा दिया गया है — दोबारा कनेक्ट करें और रिकॉर्डिंग फिर से करें।',
+  'sensorError.startFailedMessage': 'सेंसर से स्ट्रीमिंग शुरू नहीं हो सकी। जांचें कि यह चालू है और रेंज में है, फिर दोबारा कोशिश करें।',
+  'sensorError.goToPairing': 'सेंसर पेयरिंग पर जाएँ',
+  'sensorError.dismiss': 'बंद करें',
+  'sensorError.lowPowerWarningTitle': 'संभावित लो-पावर रीसेट',
+  'sensorError.lowPowerWarningMessage':
+    'सेंसर का पिछला सत्र ब्राउनआउट रीसेट (इनपुट पावर बहुत कम होने) के कारण बाधित हुआ था — संभवतः पावर बैंक कम हो रहा है। स्क्रीनिंग शुरू करने से पहले पावर बैंक जांच लें।',
 
   'kneeExtension.title': 'बैठकर घुटना सीधा करना',
-  'kneeExtension.subtitle': 'रोगी को दोनों सेंसर लगाकर बिठाएँ, फिर स्थिर गति से 6–8 बार घुटना सीधा और मोड़ने को कहें।',
+  'kneeExtension.subtitle': 'रोगी को सेंसर लगाकर बिठाएँ, फिर स्थिर गति से 6–8 बार घुटना सीधा और मोड़ने को कहें।',
   'kneeExtension.sensorConnected': '✓ ESP32 कनेक्टेड — लाइव सेंसर डेटा उपयोग हो रहा है।',
   'kneeExtension.sensorSimulated': 'अभी तक कोई ESP32 जुड़ा नहीं है — सिम्युलेटेड सिग्नल उपयोग हो रहा है ताकि पूरी प्रक्रिया जांची जा सके।',
   'kneeExtension.enableCamera': 'कैमरा क्रॉस-चेक चालू करें (वैकल्पिक)',
@@ -109,7 +123,7 @@ export const hi: Record<MessageKey, string> = {
   'sitToStand.skippedTitle': 'सिट-टू-स्टैंड परीक्षण छोड़ दिया गया',
   'sitToStand.skippedSubtitle': 'रोगी की सुरक्षा के लिए इसे छोड़ा गया है। इसका स्क्रीनिंग परिणाम पर कोई असर नहीं पड़ेगा।',
   'sitToStand.readySubtitle':
-    'रोगी को दोनों सेंसर लगाकर एक स्थिर कुर्सी पर बिठाएँ, संभव हो तो हाथ मोड़कर रखें, फिर स्थिर गति से लगभग 5 बार पूरी तरह खड़े होने और बैठने को कहें।',
+    'रोगी को सेंसर लगाकर एक स्थिर कुर्सी पर बिठाएँ, संभव हो तो हाथ मोड़कर रखें, फिर स्थिर गति से लगभग 5 बार पूरी तरह खड़े होने और बैठने को कहें।',
   'sitToStand.capturingTitle': 'रिकॉर्ड हो रहा है…',
   'sitToStand.samplesCount': '{count} नमूने',
   'sitToStand.resultTitle': 'परिणाम',
@@ -142,6 +156,10 @@ export const hi: Record<MessageKey, string> = {
 
   'results.calculating': 'गणना हो रही है…',
   'results.errorTitle': 'परिणाम की गणना नहीं हो सकी',
+  'results.simulatedDataTitle': 'कैप्चर के दौरान सेंसर कनेक्ट नहीं था',
+  'results.simulatedDataMessage':
+    'घुटने के विस्तार (नी-एक्सटेंशन) की कैप्चर में एक सिम्युलेटेड टेस्ट सिग्नल का उपयोग हुआ, असली सेंसर रीडिंग का नहीं — उस समय कोई ESP32 कनेक्ट नहीं था। सिम्युलेटेड डेटा के लिए जोखिम परिणाम नहीं दिखाया जा सकता। पेयरिंग स्क्रीन पर सेंसर को दोबारा कनेक्ट करें और नी-एक्सटेंशन कैप्चर दोबारा करें।',
+  'results.recaptureButton': 'नी-एक्सटेंशन कैप्चर दोबारा करें',
   'results.lowHeading': 'ऑस्टियोआर्थराइटिस का जोखिम कम',
   'results.lowGuidance': 'कोई तत्काल चिंता की बात नहीं मिली। नियमित निगरानी और घुटने की सुरक्षात्मक देखभाल की सलाह दें।',
   'results.moderateHeading': 'ऑस्टियोआर्थराइटिस के मध्यम जोखिम के संकेत मिले',

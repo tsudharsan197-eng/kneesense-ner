@@ -39,7 +39,7 @@ export const en = {
 
   // ---------------- Questionnaire ----------------
   'questionnaire.savedTitle': 'Questionnaire saved',
-  'questionnaire.savedSubtitle': 'Next: attach the two sensors and calibrate.',
+  'questionnaire.savedSubtitle': 'Next: attach the sensor and calibrate.',
   'questionnaire.continueToSensorSetup': 'Continue to sensor setup',
   'questionnaire.title': 'Symptom questionnaire',
   'questionnaire.painSectionLabel': 'Pain score',
@@ -61,7 +61,7 @@ export const en = {
   // ---------------- Sensor pairing ----------------
   'sensorPairing.title': 'Attach & calibrate sensors',
   'sensorPairing.subtitle':
-    'Attach both sensors — outer thigh (8–12 cm above the knee) and outer shin (8–12 cm below the knee), both pointing the same direction, toward the hip.',
+    'Attach the sensor to the outer shin, 8–12 cm below the knee, pointing toward the hip.',
   'sensorPairing.skipNotice':
     'No ESP32 in range? Skip this step — the exercise screens fall back to a simulated signal so you can still test the rest of the app.',
   'sensorPairing.step1': '1. Connect',
@@ -69,19 +69,34 @@ export const en = {
   'sensorPairing.connecting': 'Connecting…',
   'sensorPairing.connected': '✓ Connected',
   'sensorPairing.step2': '2. Calibrate',
-  'sensorPairing.calibrateSubtitle': 'Have the patient hold their leg still, then calibrate.',
+  'sensorPairing.calibrateSubtitle': 'Have the patient straighten their leg fully and hold still, then calibrate.',
   'sensorPairing.calibrate': 'Calibrate',
   'sensorPairing.calibrating': 'Calibrating…',
   'sensorPairing.calibrated': '✓ Calibrated',
   'sensorPairing.continue': 'Continue',
-  'sensorPairing.skip': 'Skip (use simulated data)',
+  'sensorPairing.skip': 'Skip for now',
+
+  // ---------------- Sensor errors (ErrorModal.tsx) ----------------
+  'sensorError.genericTitle': 'Sensor error',
+  'sensorError.notConnectedTitle': 'No sensor connected',
+  'sensorError.notConnectedMessage':
+    'Connect and calibrate the ESP32 on the Sensor Pairing screen before starting a capture. There is no simulated fallback — a capture cannot start without a real sensor connected.',
+  'sensorError.disconnectedMidCaptureMessage':
+    'The sensor disconnected during capture (check battery and range). The partial data was discarded — reconnect and redo the capture.',
+  'sensorError.startFailedMessage':
+    'Could not start streaming from the sensor. Check that it is powered on and in range, then try again.',
+  'sensorError.goToPairing': 'Go to Sensor Pairing',
+  'sensorError.dismiss': 'Dismiss',
+  'sensorError.lowPowerWarningTitle': 'Possible low-power reset',
+  'sensorError.lowPowerWarningMessage':
+    "The sensor's last run was interrupted by a brownout reset (input power sagged too low) — likely the power bank getting low. Check the power bank before starting a screening.",
 
   // ---------------- Knee extension capture ----------------
   'kneeExtension.title': 'Seated knee extension',
   'kneeExtension.subtitle':
-    'Have the patient sit with both sensors attached, then extend and bend the knee at a steady pace for 6–8 repetitions.',
+    'Have the patient sit with the sensor attached, then extend and bend the knee at a steady pace for 6–8 repetitions.',
   'kneeExtension.sensorConnected': '✓ ESP32 connected — using live sensor data.',
-  'kneeExtension.sensorSimulated': 'No ESP32 paired yet — using a simulated signal so the flow can still be tested end-to-end.',
+  'kneeExtension.sensorSimulated': 'No ESP32 connected — using a simulated signal so the flow can still be tested end-to-end.',
   'kneeExtension.enableCamera': 'Enable camera cross-check (optional)',
   'kneeExtension.cameraEnabled': '✓ Camera cross-check enabled',
   'kneeExtension.startCapture': 'Start capture',
@@ -115,7 +130,7 @@ export const en = {
   'sitToStand.skippedTitle': 'Sit-to-stand test skipped',
   'sitToStand.skippedSubtitle': "Marked as skipped for patient safety. This won't count against the screening result.",
   'sitToStand.readySubtitle':
-    'Have the patient sit in a stable chair with both sensors attached, arms crossed if possible, then stand fully and sit back down at a steady pace for about 5 repetitions.',
+    'Have the patient sit in a stable chair with the sensor attached, arms crossed if possible, then stand fully and sit back down at a steady pace for about 5 repetitions.',
   'sitToStand.capturingTitle': 'Capturing…',
   'sitToStand.samplesCount': '{count} samples',
   'sitToStand.resultTitle': 'Result',
@@ -150,6 +165,10 @@ export const en = {
   // ---------------- Results ----------------
   'results.calculating': 'Calculating…',
   'results.errorTitle': 'Could not compute results',
+  'results.simulatedDataTitle': 'Sensor not connected during capture',
+  'results.simulatedDataMessage':
+    'The knee-extension capture used a simulated test signal, not real sensor readings — no ESP32 was connected at the time. A risk result cannot be shown for simulated data. Reconnect the sensor on the pairing screen and redo the knee-extension capture.',
+  'results.recaptureButton': 'Redo knee-extension capture',
   'results.lowHeading': 'Low OA-risk markers',
   'results.lowGuidance': 'No urgent concerns identified. Advise routine monitoring and preventive knee care.',
   'results.moderateHeading': 'Moderate OA-risk markers detected',

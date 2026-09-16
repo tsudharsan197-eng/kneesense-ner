@@ -37,7 +37,7 @@ export const bn: Record<MessageKey, string> = {
   'newSession.continueToQuestionnaire': 'প্রশ্নাবলীতে যান',
 
   'questionnaire.savedTitle': 'প্রশ্নাবলী সংরক্ষিত হয়েছে',
-  'questionnaire.savedSubtitle': 'পরবর্তী ধাপ: দুটি সেন্সর লাগান এবং ক্যালিব্রেট করুন।',
+  'questionnaire.savedSubtitle': 'পরবর্তী ধাপ: সেন্সর লাগান এবং ক্যালিব্রেট করুন।',
   'questionnaire.continueToSensorSetup': 'সেন্সর সেটআপে যান',
   'questionnaire.title': 'উপসর্গ প্রশ্নাবলী',
   'questionnaire.painSectionLabel': 'ব্যথার মাত্রা',
@@ -58,7 +58,7 @@ export const bn: Record<MessageKey, string> = {
 
   'sensorPairing.title': 'সেন্সর লাগান ও ক্যালিব্রেট করুন',
   'sensorPairing.subtitle':
-    'দুটি সেন্সরই লাগান — উরুর বাইরের দিকে (হাঁটুর ৮–১২ সেমি ওপরে) এবং পায়ের নলার বাইরের দিকে (হাঁটুর ৮–১২ সেমি নিচে), দুটোই একই দিকে অর্থাৎ কোমরের দিকে মুখ করে।',
+    'সেন্সরটি পায়ের নলার বাইরের দিকে লাগান (হাঁটুর ৮–১২ সেমি নিচে), কোমরের দিকে মুখ করে।',
   'sensorPairing.skipNotice':
     'কাছে কোনো ESP32 নেই? এই ধাপ বাদ দিন — অনুশীলন স্ক্রিনগুলো একটি সিমুলেটেড সংকেত ব্যবহার করবে, যাতে আপনি বাকি অ্যাপটি পরীক্ষা করতে পারেন।',
   'sensorPairing.step1': '১. সংযোগ করুন',
@@ -66,15 +66,29 @@ export const bn: Record<MessageKey, string> = {
   'sensorPairing.connecting': 'সংযোগ হচ্ছে…',
   'sensorPairing.connected': '✓ সংযুক্ত হয়েছে',
   'sensorPairing.step2': '২. ক্যালিব্রেট করুন',
-  'sensorPairing.calibrateSubtitle': 'রোগীর পা স্থির রাখুন, তারপর ক্যালিব্রেট করুন।',
+  'sensorPairing.calibrateSubtitle': 'রোগীর পা সম্পূর্ণ সোজা করে স্থির রাখুন, তারপর ক্যালিব্রেট করুন।',
   'sensorPairing.calibrate': 'ক্যালিব্রেট করুন',
   'sensorPairing.calibrating': 'ক্যালিব্রেট হচ্ছে…',
   'sensorPairing.calibrated': '✓ ক্যালিব্রেট হয়েছে',
   'sensorPairing.continue': 'এগিয়ে যান',
-  'sensorPairing.skip': 'বাদ দিন (সিমুলেটেড তথ্য ব্যবহার করুন)',
+  'sensorPairing.skip': 'আপাতত বাদ দিন',
+
+  // ---------------- Sensor errors (ErrorModal.tsx) ----------------
+  'sensorError.genericTitle': 'সেন্সর সমস্যা',
+  'sensorError.notConnectedTitle': 'কোনো সেন্সর সংযুক্ত নেই',
+  'sensorError.notConnectedMessage':
+    'রেকর্ডিং শুরু করার আগে সেন্সর পেয়ারিং স্ক্রিনে ESP32 সংযুক্ত করে ক্যালিব্রেট করুন। কোনো সিমুলেটেড বিকল্প নেই — প্রকৃত সেন্সর সংযুক্ত না হলে রেকর্ডিং শুরু করা যাবে না।',
+  'sensorError.disconnectedMidCaptureMessage':
+    'রেকর্ডিংয়ের সময় সেন্সর সংযোগ বিচ্ছিন্ন হয়ে গেছে (ব্যাটারি ও দূরত্ব পরীক্ষা করুন)। আংশিক তথ্য বাতিল করা হয়েছে — পুনরায় সংযুক্ত করে রেকর্ডিং আবার করুন।',
+  'sensorError.startFailedMessage': 'সেন্সর থেকে স্ট্রিমিং শুরু করা যায়নি। এটি চালু আছে ও পরিসরের মধ্যে আছে কিনা পরীক্ষা করে আবার চেষ্টা করুন।',
+  'sensorError.goToPairing': 'সেন্সর পেয়ারিং-এ যান',
+  'sensorError.dismiss': 'বন্ধ করুন',
+  'sensorError.lowPowerWarningTitle': 'সম্ভাব্য লো-পাওয়ার রিসেট',
+  'sensorError.lowPowerWarningMessage':
+    'সেন্সরের শেষ রান একটি ব্রাউনআউট রিসেটের (ইনপুট পাওয়ার খুব কমে যাওয়া) কারণে বাধাগ্রস্ত হয়েছিল — সম্ভবত পাওয়ার ব্যাংক কমে যাচ্ছে। স্ক্রিনিং শুরু করার আগে পাওয়ার ব্যাংক পরীক্ষা করুন।',
 
   'kneeExtension.title': 'বসে হাঁটু সোজা করা',
-  'kneeExtension.subtitle': 'রোগীকে দুটি সেন্সর লাগিয়ে বসান, তারপর ধীরে ধীরে হাঁটু সোজা ও ভাঁজ করতে বলুন, ৬–৮ বার।',
+  'kneeExtension.subtitle': 'রোগীকে সেন্সর লাগিয়ে বসান, তারপর ধীরে ধীরে হাঁটু সোজা ও ভাঁজ করতে বলুন, ৬–৮ বার।',
   'kneeExtension.sensorConnected': '✓ ESP32 সংযুক্ত — লাইভ সেন্সর তথ্য ব্যবহার হচ্ছে।',
   'kneeExtension.sensorSimulated': 'এখনো কোনো ESP32 যুক্ত হয়নি — সিমুলেটেড সংকেত ব্যবহার হচ্ছে, যাতে প্রক্রিয়াটি পরীক্ষা করা যায়।',
   'kneeExtension.enableCamera': 'ক্যামেরা ক্রস-চেক চালু করুন (ঐচ্ছিক)',
@@ -109,7 +123,7 @@ export const bn: Record<MessageKey, string> = {
   'sitToStand.skippedTitle': 'সিট-টু-স্ট্যান্ড পরীক্ষা বাদ দেওয়া হয়েছে',
   'sitToStand.skippedSubtitle': 'রোগীর নিরাপত্তার জন্য বাদ দেওয়া হয়েছে। এটি ফলাফলে প্রভাব ফেলবে না।',
   'sitToStand.readySubtitle':
-    'রোগীকে দুটি সেন্সর লাগিয়ে একটি স্থিতিশীল চেয়ারে বসান, সম্ভব হলে হাত ভাঁজ করে রাখুন, তারপর প্রায় ৫ বার সম্পূর্ণভাবে দাঁড়াতে ও বসতে বলুন।',
+    'রোগীকে সেন্সর লাগিয়ে একটি স্থিতিশীল চেয়ারে বসান, সম্ভব হলে হাত ভাঁজ করে রাখুন, তারপর প্রায় ৫ বার সম্পূর্ণভাবে দাঁড়াতে ও বসতে বলুন।',
   'sitToStand.capturingTitle': 'রেকর্ড হচ্ছে…',
   'sitToStand.samplesCount': '{count}টি নমুনা',
   'sitToStand.resultTitle': 'ফলাফল',
@@ -142,6 +156,10 @@ export const bn: Record<MessageKey, string> = {
 
   'results.calculating': 'হিসাব করা হচ্ছে…',
   'results.errorTitle': 'ফলাফল হিসাব করা যায়নি',
+  'results.simulatedDataTitle': 'ক্যাপচারের সময় সেন্সর সংযুক্ত ছিল না',
+  'results.simulatedDataMessage':
+    'হাঁটু-এক্সটেনশন ক্যাপচারে প্রকৃত সেন্সর রিডিংয়ের বদলে একটি সিমুলেটেড টেস্ট সংকেত ব্যবহার হয়েছে — সেই সময় কোনো ESP32 সংযুক্ত ছিল না। সিমুলেটেড তথ্যের জন্য ঝুঁকির ফলাফল দেখানো যাবে না। পেয়ারিং স্ক্রিনে সেন্সর পুনরায় সংযুক্ত করুন এবং হাঁটু-এক্সটেনশন ক্যাপচার আবার করুন।',
+  'results.recaptureButton': 'হাঁটু-এক্সটেনশন ক্যাপচার আবার করুন',
   'results.lowHeading': 'অস্টিওআর্থ্রাইটিসের ঝুঁকি কম',
   'results.lowGuidance': 'কোনো জরুরি উদ্বেগের কারণ পাওয়া যায়নি। নিয়মিত পর্যবেক্ষণ ও প্রতিরোধমূলক হাঁটুর যত্নের পরামর্শ দিন।',
   'results.moderateHeading': 'অস্টিওআর্থ্রাইটিসের ঝুঁকির মাঝারি লক্ষণ পাওয়া গেছে',

@@ -20,7 +20,12 @@ export default function WalkTestPage() {
     { value: 6, label: t('walkTest.distance6m') },
     { value: 10, label: t('walkTest.distance10m') },
   ]
-  const DIFFICULTY_LABELS = [t('common.none'), t('common.mild'), t('common.moderate'), t('common.severe')]
+  const DIFFICULTY_OPTIONS = [
+    { value: 0, label: t('common.none') },
+    { value: 1, label: t('common.mild') },
+    { value: 2, label: t('common.moderate') },
+    { value: 3, label: t('common.severe') },
+  ]
 
   const [phase, setPhase] = useState<Phase>('setup')
   const [distanceM, setDistanceM] = useState(6)
@@ -247,11 +252,9 @@ export default function WalkTestPage() {
 
         <ScaleButtons
           label={t('walkTest.gaitIrregularity')}
-          min={0}
-          max={3}
+          options={DIFFICULTY_OPTIONS}
           value={gaitIrregularity}
           onChange={setGaitIrregularity}
-          labels={DIFFICULTY_LABELS}
         />
 
         <button

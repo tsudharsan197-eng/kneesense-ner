@@ -1,21 +1,14 @@
-import { BleClient, numbersToDataView } from '@capacitor-community/bluetooth-le';
-import {
-  ANGLE_CHAR_UUID,
-  CONTROL_CHAR_UUID,
-  CONTROL_CMD,
-  SERVICE_UUID,
-  STATUS_CHAR_UUID,
-  decodeAnglePayload,
-  decodeStatusByte,
-} from './bleProtocol';
+import { BleClient } from '@capacitor-community/bluetooth-le';
+import { CHARACTERISTIC_UUID, DEVICE_NAME, SERVICE_UUID, decodeImuCsvPayload } from './bleProtocol';
+import { KneeSegmentProcessor, type FusedImuSample } from './kneeSegmentProcessor';
 import type { SensorSource } from './sensorSource';
 import type { AngleSample } from './motionAnalysis';
 
 /**
- * A rural health worker pairs the ESP32 once after attaching the sensors
- * (see SensorPairingPage), then runs knee-extension, sit-to-stand, etc.
- * without re-pairing between exercises — so this is a module-level
- * singleton connection, not something each capture page owns.
+ * A rural health worker pairs the ESP32 once after attaching the sensor
+ * (see SensorPairingPage), then runs knee-extension, sit-to-stand, walk
+ * test, etc. without re-pairing between exercises — so this is a
+ * module-level singleton connection, not something each capture page owns.
  */
 let deviceId: string | null = null;
 let initialized = false;
@@ -70,22 +63,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 }
 
 const CONNECT_TIMEOUT_MS = 15000;
-const STATUS_READ_TIMEOUT_MS = 5000;
 const TIMEOUT_MESSAGE =
   'Connection timed out. If this sensor is also paired in your device\'s own Bluetooth settings (not this app), remove/unpair it there first — this app connects directly over Web Bluetooth and an OS-level pairing can block that. Then try again.';
 
-/**
- * Connects and returns whether the firmware's last boot was a brownout
- * reset (see bleProtocol.ts's decodeStatusByte) — the closest available
- * low-power signal given this hardware runs off USB from a power bank with
- * no battery-voltage rail to sense live. Reading the status characteristic
- * is best-effort: an older/mismatched firmware without it shouldn't block
- * a successful connection, so a read failure or timeout just reports "no
- * warning" rather than throwing.
- */
-export async function connect(): Promise<{ possibleLowPowerReset: boolean }> {
+export async function connect(): Promise<void> {
   await ensureInitialized();
-  const device = await BleClient.requestDevice({ services: [SERVICE_UUID] });
+  const device = await BleClient.requestDevice({ name: DEVICE_NAME, optionalServices: [SERVICE_UUID] });
   await withTimeout(
     BleClient.connect(device.deviceId, () => {
       deviceId = null;
@@ -95,19 +78,6 @@ export async function connect(): Promise<{ possibleLowPowerReset: boolean }> {
     TIMEOUT_MESSAGE,
   );
   deviceId = device.deviceId;
-
-  let possibleLowPowerReset = false;
-  try {
-    const status = await withTimeout(
-      BleClient.read(device.deviceId, SERVICE_UUID, STATUS_CHAR_UUID),
-      STATUS_READ_TIMEOUT_MS,
-      'status characteristic read timed out',
-    );
-    possibleLowPowerReset = decodeStatusByte(status).lastResetWasBrownout;
-  } catch (err) {
-    console.warn('[ble] could not read status characteristic', err);
-  }
-  return { possibleLowPowerReset };
 }
 
 export async function disconnect(): Promise<void> {
@@ -116,46 +86,67 @@ export async function disconnect(): Promise<void> {
   deviceId = null;
 }
 
-/** Sends the calibrate command; firmware zeroes the sensor's angle reference while the leg is held straight and still. */
-export async function calibrate(): Promise<void> {
-  if (!deviceId) throw new Error('Not connected to a sensor');
-  await BleClient.write(deviceId, SERVICE_UUID, CONTROL_CHAR_UUID, numbersToDataView([CONTROL_CMD.CALIBRATE]));
+/**
+ * Subscribes to the raw IMU notify stream and fans each packet through a
+ * fresh KneeSegmentProcessor (accel+gyro complementary filter), so callers
+ * get a ready-to-use angle/accel/jerk sample instead of raw sensor axes.
+ * One processor per subscription — starting a new exercise capture always
+ * gets a clean angle-fusion state, not gyro-integration drift left over
+ * from a previous, unrelated capture. Returns a stop function; there is no
+ * on-device calibration to trigger (this firmware has no control/status
+ * characteristics, notify-only) — calibration is entirely client-side, see
+ * stepCounter.ts / squatCounter.ts.
+ */
+export function subscribeBleImuSamples(
+  onSample: (sample: FusedImuSample) => void,
+  onError?: (error: unknown) => void,
+): () => void {
+  if (!deviceId) {
+    onError?.(new Error('Not connected to a sensor'));
+    return () => {};
+  }
+  const id = deviceId;
+  const processor = new KneeSegmentProcessor();
+
+  BleClient.startNotifications(id, SERVICE_UUID, CHARACTERISTIC_UUID, (value) => {
+    try {
+      const reading = decodeImuCsvPayload(value);
+      onSample(processor.update(reading));
+    } catch (err) {
+      console.warn('[ble] skipping malformed packet', err);
+    }
+  }).catch((err) => {
+    console.error('[ble] failed to start streaming', err);
+    onError?.(err);
+  });
+
+  return () => {
+    BleClient.stopNotifications(id, SERVICE_UUID, CHARACTERISTIC_UUID).catch(() => {});
+  };
 }
 
 /**
- * A SensorSource backed by the already-connected ESP32. start()/stop() just
- * toggle streaming on the existing connection — they don't reconnect, so
- * this can be called once per exercise across a whole session.
+ * A SensorSource backed by the already-connected ESP32, for pages that only
+ * need the angle stream (knee-extension capture — no live rep counting).
+ * Single-sensor hardware (shin-mounted): the thigh is assumed to stay still
+ * during seated knee extension (it rests on the chair), so its angle is
+ * fixed at 0deg and knee angle reduces to |shinAngle - 0| = shinAngle in
+ * motionAnalysis.ts. This assumption does NOT hold for sit-to-stand (the
+ * thigh does most of that motion) — SitToStandPage uses
+ * subscribeBleImuSamples directly instead, for the same reason it also
+ * needs live squat counting.
  */
 export function createBleSensorSource(): SensorSource {
+  let stop: (() => void) | null = null;
   return {
     start(onSample: (sample: AngleSample) => void, onError?: (error: unknown) => void) {
-      if (!deviceId) {
-        onError?.(new Error('Not connected to a sensor'));
-        return;
-      }
-      const id = deviceId;
-      BleClient.startNotifications(id, SERVICE_UUID, ANGLE_CHAR_UUID, (value) => {
-        const { t, angle } = decodeAnglePayload(value);
-        // Single-sensor hardware (shin-mounted): the thigh is assumed to
-        // stay still during seated knee extension (it rests on the chair),
-        // so its angle is fixed at the calibrated 0deg reference and knee
-        // angle reduces to |shinAngle - 0| = shinAngle in motionAnalysis.ts.
-        // This assumption does NOT hold for sit-to-stand (the thigh does
-        // most of that motion) — see firmware/README.md.
-        onSample({ t, thighAngle: 0, shinAngle: angle });
-      })
-        .then(() => BleClient.write(id, SERVICE_UUID, CONTROL_CHAR_UUID, numbersToDataView([CONTROL_CMD.START_STREAMING])))
-        .catch((err) => {
-          console.error('[ble] failed to start streaming', err);
-          onError?.(err);
-        });
+      stop = subscribeBleImuSamples((sample) => {
+        onSample({ t: sample.t, thighAngle: 0, shinAngle: sample.angleDeg });
+      }, onError);
     },
     stop() {
-      if (!deviceId) return;
-      const id = deviceId;
-      BleClient.write(id, SERVICE_UUID, CONTROL_CHAR_UUID, numbersToDataView([CONTROL_CMD.STOP_STREAMING])).catch(() => {});
-      BleClient.stopNotifications(id, SERVICE_UUID, ANGLE_CHAR_UUID).catch(() => {});
+      stop?.();
+      stop = null;
     },
   };
 }

@@ -56,7 +56,7 @@ export const ta: Record<MessageKey, string> = {
   'questionnaire.saving': 'சேமிக்கப்படுகிறது…',
   'questionnaire.saveButton': 'கேள்வித்தாளை சேமிக்கவும்',
 
-  'sensorPairing.title': 'சென்சார்களைப் பொருத்தி அளவீடு செய்யவும்',
+  'sensorPairing.title': 'சென்சாரைப் பொருத்தி இணைக்கவும்',
   'sensorPairing.subtitle':
     'சென்சாரை கால் முன்புறத்தின் வெளிப்புறத்தில் பொருத்தவும் (முழங்காலுக்கு 8–12 செ.மீ கீழே), இடுப்பை நோக்கி.',
   'sensorPairing.skipNotice':
@@ -127,6 +127,10 @@ export const ta: Record<MessageKey, string> = {
     'சென்சாரைப் பொருத்திய நிலையில் நோயாளியை உறுதியான நாற்காலியில் அமர வைத்து, முடிந்தால் கைகளை மடக்கி வைத்து, பின் சுமார் 5 முறை நிலையான வேகத்தில் முழுமையாக எழுந்து நின்று அமரச் சொல்லவும்.',
   'sitToStand.capturingTitle': 'பதிவு செய்கிறது…',
   'sitToStand.samplesCount': '{count} மாதிரிகள்',
+  'sitToStand.calibratingSquat': 'ஸ்குவாட் முறை அளவீடு செய்யப்படுகிறது — சில மெதுவான, முழுமையான ஸ்குவாட்களைச் செய்யவும்… {elapsed}/{total} வி',
+  'sitToStand.repsAutoLabel': 'மறுநிகழ்வுகள் (தானாக கண்டறியப்பட்டது)',
+  'sitToStand.fullSquatLabel': 'முழுமையான',
+  'sitToStand.shallowSquatLabel': 'ஆழமற்ற',
   'sitToStand.resultTitle': 'முடிவு',
   'sitToStand.repsTarget': '{count} (இலக்கு ~5)',
   'sitToStand.continueToWalkTest': 'நடைப் பரிசோதனைக்குச் செல்லவும்',
@@ -138,6 +142,8 @@ export const ta: Record<MessageKey, string> = {
   'walkTest.startWalk': 'நடையைத் தொடங்கவும்',
   'walkTest.walkingTitle': 'நடக்கிறார்…',
   'walkTest.step': 'அடி',
+  'walkTest.autoStepsLabel': 'அடிகள் (தானாக கண்டறியப்பட்டது)',
+  'walkTest.calibratingGait': 'நடை முறை அளவீடு செய்யப்படுகிறது — இயல்பாக நடக்கவும்… {elapsed}/{total} வி',
   'walkTest.pause': 'இடைநிறுத்தம்',
   'walkTest.stopWalk': 'நடையை நிறுத்தவும்',
   'walkTest.finishTitle': 'நடைப் பரிசோதனை — முடிவு',

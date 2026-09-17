@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ScaleButtons } from '../components/ScaleButtons'
 import { saveWalkTest } from '../db/repositories/walkTest'
+import { isConnected as isSensorConnected, onDisconnect, subscribeBleImuSamples } from '../lib/bleConnection'
+import { StepCounter, STEP_CALIBRATION_SECONDS } from '../lib/stepCounter'
 import { useTranslation } from '../i18n/I18nContext'
 import { Icon } from '../components/Icon'
+import { ErrorModal } from '../components/ErrorModal'
 import type { WalkTestMetrics } from '../types/models'
 
 type Phase = 'setup' | 'walking' | 'rating' | 'done'
@@ -28,13 +31,43 @@ export default function WalkTestPage() {
   const [gaitIrregularity, setGaitIrregularity] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState<WalkTestMetrics | null>(null)
+  const [sensorErrorModal, setSensorErrorModal] = useState<{ title: string; message: string } | null>(null)
+
+  // Live auto step-detection state — only populated when a real sensor is
+  // connected; the manual tap counter above still works standalone otherwise.
+  const [stepCounterPhase, setStepCounterPhase] = useState<'CALIBRATING' | 'COUNTING' | null>(null)
+  const [calibElapsedS, setCalibElapsedS] = useState(0)
 
   const startTimeRef = useRef<string>('')
   const startPerfRef = useRef(0)
   const endTimeRef = useRef<string>('')
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const stepCounterRef = useRef<StepCounter | null>(null)
+  const unsubscribeBleRef = useRef<(() => void) | null>(null)
+  const usingAutoStepsRef = useRef(false)
 
-  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current) }, [])
+  function stopBleStepDetection() {
+    unsubscribeBleRef.current?.()
+    unsubscribeBleRef.current = null
+    stepCounterRef.current = null
+  }
+
+  useEffect(() => {
+    const unsubscribe = onDisconnect(() => {
+      if (!usingAutoStepsRef.current) return
+      stopBleStepDetection()
+      usingAutoStepsRef.current = false
+      if (tickRef.current) clearInterval(tickRef.current)
+      setPhase('setup')
+      setSensorErrorModal({ title: t('sensorError.genericTitle'), message: t('sensorError.disconnectedMidCaptureMessage') })
+    })
+    return () => {
+      unsubscribe()
+      if (tickRef.current) clearInterval(tickRef.current)
+      stopBleStepDetection()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function onStartWalk() {
     startTimeRef.current = new Date().toISOString()
@@ -42,14 +75,43 @@ export default function WalkTestPage() {
     setSteps(0)
     setPauses(0)
     setElapsedS(0)
+    setStepCounterPhase(null)
+    setCalibElapsedS(0)
     setPhase('walking')
     tickRef.current = setInterval(() => {
       setElapsedS((performance.now() - startPerfRef.current) / 1000)
     }, 200)
+
+    if (isSensorConnected()) {
+      usingAutoStepsRef.current = true
+      const counter = new StepCounter()
+      stepCounterRef.current = counter
+      unsubscribeBleRef.current = subscribeBleImuSamples(
+        (sample) => {
+          counter.update(sample.angleDeg, sample.accelMag, sample.t)
+          setSteps(counter.stepCount)
+          setStepCounterPhase(counter.phase)
+          if (counter.phase === 'CALIBRATING' && counter.phaseStartS !== null) {
+            setCalibElapsedS(sample.t - counter.phaseStartS)
+          }
+        },
+        () => {
+          usingAutoStepsRef.current = false
+          stopBleStepDetection()
+          if (tickRef.current) clearInterval(tickRef.current)
+          setPhase('setup')
+          setSensorErrorModal({ title: t('sensorError.genericTitle'), message: t('sensorError.startFailedMessage') })
+        },
+      )
+    } else {
+      usingAutoStepsRef.current = false
+    }
   }
 
   function onStopWalk() {
     if (tickRef.current) clearInterval(tickRef.current)
+    stopBleStepDetection()
+    usingAutoStepsRef.current = false
     endTimeRef.current = new Date().toISOString()
     setElapsedS((performance.now() - startPerfRef.current) / 1000)
     setPhase('rating')
@@ -87,6 +149,7 @@ export default function WalkTestPage() {
             <p className="page-subtitle">{t('walkTest.setupSubtitle')}</p>
           </div>
         </div>
+        {isSensorConnected() && <p className="card-info">{t('kneeExtension.sensorConnected')}</p>}
         <div className="choice-grid">
           {DISTANCE_OPTIONS.map((opt) => (
             <button
@@ -107,6 +170,7 @@ export default function WalkTestPage() {
   }
 
   if (phase === 'walking') {
+    const autoMode = usingAutoStepsRef.current
     return (
       <main className="page">
         <div className="page-header">
@@ -114,10 +178,22 @@ export default function WalkTestPage() {
         </div>
         <p className="timer-display">{elapsedS.toFixed(1)}s</p>
 
+        {autoMode && stepCounterPhase === 'CALIBRATING' && (
+          <p className="card-info">
+            {t('walkTest.calibratingGait', { elapsed: calibElapsedS.toFixed(1), total: STEP_CALIBRATION_SECONDS.toFixed(0) })}
+          </p>
+        )}
+
         <div className="tap-grid">
-          <button type="button" onClick={() => setSteps((s) => s + 1)} className="tap-btn tap-btn-accent">
-            {t('walkTest.step')}<span className="tap-count">{steps}</span>
-          </button>
+          {autoMode ? (
+            <div className="tap-btn tap-btn-accent">
+              {t('walkTest.autoStepsLabel')}<span className="tap-count">{steps}</span>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setSteps((s) => s + 1)} className="tap-btn tap-btn-accent">
+              {t('walkTest.step')}<span className="tap-count">{steps}</span>
+            </button>
+          )}
           <button type="button" onClick={() => setPauses((p) => p + 1)} className="tap-btn">
             {t('walkTest.pause')}<span className="tap-count">{pauses}</span>
           </button>
@@ -126,6 +202,17 @@ export default function WalkTestPage() {
         <button type="button" onClick={onStopWalk} className="btn btn-danger btn-lg btn-block">
           {t('walkTest.stopWalk')}
         </button>
+
+        {sensorErrorModal && (
+          <ErrorModal
+            title={sensorErrorModal.title}
+            message={sensorErrorModal.message}
+            primaryLabel={t('sensorError.goToPairing')}
+            onPrimary={() => navigate(`/session/${sessionId}/sensor-pairing`)}
+            secondaryLabel={t('sensorError.dismiss')}
+            onSecondary={() => setSensorErrorModal(null)}
+          />
+        )}
       </main>
     )
   }

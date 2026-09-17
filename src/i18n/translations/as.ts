@@ -56,7 +56,7 @@ export const as: Record<MessageKey, string> = {
   'questionnaire.saving': 'সংৰক্ষণ কৰি থকা হৈছে…',
   'questionnaire.saveButton': 'প্ৰশ্নাৱলী সংৰক্ষণ কৰক',
 
-  'sensorPairing.title': 'ছেন্সৰ লগাওক আৰু কেলিব্ৰেট কৰক',
+  'sensorPairing.title': 'ছেন্সৰ লগাওক আৰু সংযোগ কৰক',
   'sensorPairing.subtitle':
     'ছেন্সৰটো ভৰিৰ নলাৰ বাহিৰফালে লগাওক (আঁঠুৰ ৮–১২ ছেঃমিঃ তলত), কঁকালৰ ফাললৈ মুখ কৰি।',
   'sensorPairing.skipNotice':
@@ -126,6 +126,10 @@ export const as: Record<MessageKey, string> = {
     'ৰোগীক ছেন্সৰ লগাই এখন স্থিৰ চকীত বহুৱাওক, সম্ভৱ হ\'লে হাত মোঁহি ৰাখক, তাৰ পিছত প্ৰায় ৫ বাৰ সম্পূৰ্ণভাৱে থিয় হ\'বলৈ আৰু বহিবলৈ কওক।',
   'sitToStand.capturingTitle': 'ৰেকৰ্ড হৈ আছে…',
   'sitToStand.samplesCount': '{count}টা নমুনা',
+  'sitToStand.calibratingSquat': 'স্কোৱাটৰ ধৰণ কেলিব্ৰেট হৈ আছে — কেইটামান লাহে লাহে সম্পূৰ্ণ স্কোৱাট কৰক… {elapsed}/{total} ছে',
+  'sitToStand.repsAutoLabel': 'পুনৰাবৃত্তি (স্বয়ংক্ৰিয়ভাৱে চিনাক্ত কৰা)',
+  'sitToStand.fullSquatLabel': 'সম্পূৰ্ণ',
+  'sitToStand.shallowSquatLabel': 'লঘু',
   'sitToStand.resultTitle': 'ফলাফল',
   'sitToStand.repsTarget': '{count} (লক্ষ্য ~৫)',
   'sitToStand.continueToWalkTest': 'খোজ কঢ়া পৰীক্ষালৈ যাওক',
@@ -137,6 +141,8 @@ export const as: Record<MessageKey, string> = {
   'walkTest.startWalk': 'খোজ কঢ়া আৰম্ভ কৰক',
   'walkTest.walkingTitle': 'খোজ কাঢ়ি আছে…',
   'walkTest.step': 'খোজ',
+  'walkTest.autoStepsLabel': 'খোজ (স্বয়ংক্ৰিয়ভাৱে চিনাক্ত কৰা)',
+  'walkTest.calibratingGait': 'খোজ কঢ়াৰ ধৰণ কেলিব্ৰেট হৈ আছে — সাধাৰণভাৱে খোজ কাঢ়ি থাকক… {elapsed}/{total} ছে',
   'walkTest.pause': 'বিৰতি',
   'walkTest.stopWalk': 'খোজ কঢ়া বন্ধ কৰক',
   'walkTest.finishTitle': 'খোজ কঢ়া পৰীক্ষা — শেষ পদক্ষেপ',

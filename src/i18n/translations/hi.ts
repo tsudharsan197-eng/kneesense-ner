@@ -56,7 +56,7 @@ export const hi: Record<MessageKey, string> = {
   'questionnaire.saving': 'सहेजा जा रहा है…',
   'questionnaire.saveButton': 'प्रश्नावली सहेजें',
 
-  'sensorPairing.title': 'सेंसर लगाएँ और कैलिब्रेट करें',
+  'sensorPairing.title': 'सेंसर लगाएँ और कनेक्ट करें',
   'sensorPairing.subtitle':
     'सेंसर लगाएँ — पिंडली के बाहरी हिस्से पर (घुटने से 8–12 सेमी नीचे), कूल्हे की ओर मुख करके।',
   'sensorPairing.skipNotice':
@@ -126,6 +126,10 @@ export const hi: Record<MessageKey, string> = {
     'रोगी को सेंसर लगाकर एक स्थिर कुर्सी पर बिठाएँ, संभव हो तो हाथ मोड़कर रखें, फिर स्थिर गति से लगभग 5 बार पूरी तरह खड़े होने और बैठने को कहें।',
   'sitToStand.capturingTitle': 'रिकॉर्ड हो रहा है…',
   'sitToStand.samplesCount': '{count} नमूने',
+  'sitToStand.calibratingSquat': 'स्क्वाट पैटर्न कैलिब्रेट हो रहा है — कुछ धीमे, पूरे स्क्वाट करें… {elapsed}/{total} से.',
+  'sitToStand.repsAutoLabel': 'पुनरावृत्तियाँ (स्वतः पहचानी गईं)',
+  'sitToStand.fullSquatLabel': 'पूरा',
+  'sitToStand.shallowSquatLabel': 'उथला',
   'sitToStand.resultTitle': 'परिणाम',
   'sitToStand.repsTarget': '{count} (लक्ष्य ~5)',
   'sitToStand.continueToWalkTest': 'चलने के परीक्षण पर जाएँ',
@@ -137,6 +141,8 @@ export const hi: Record<MessageKey, string> = {
   'walkTest.startWalk': 'चलना शुरू करें',
   'walkTest.walkingTitle': 'चल रहे हैं…',
   'walkTest.step': 'कदम',
+  'walkTest.autoStepsLabel': 'कदम (स्वतः पहचाना गया)',
+  'walkTest.calibratingGait': 'चाल कैलिब्रेट हो रही है — सामान्य रूप से चलते रहें… {elapsed}/{total} से.',
   'walkTest.pause': 'रुकना',
   'walkTest.stopWalk': 'चलना बंद करें',
   'walkTest.finishTitle': 'चलने का परीक्षण — समाप्ति',

@@ -56,7 +56,7 @@ export const bn: Record<MessageKey, string> = {
   'questionnaire.saving': 'সংরক্ষণ হচ্ছে…',
   'questionnaire.saveButton': 'প্রশ্নাবলী সংরক্ষণ করুন',
 
-  'sensorPairing.title': 'সেন্সর লাগান ও ক্যালিব্রেট করুন',
+  'sensorPairing.title': 'সেন্সর লাগান ও সংযুক্ত করুন',
   'sensorPairing.subtitle':
     'সেন্সরটি পায়ের নলার বাইরের দিকে লাগান (হাঁটুর ৮–১২ সেমি নিচে), কোমরের দিকে মুখ করে।',
   'sensorPairing.skipNotice':
@@ -126,6 +126,10 @@ export const bn: Record<MessageKey, string> = {
     'রোগীকে সেন্সর লাগিয়ে একটি স্থিতিশীল চেয়ারে বসান, সম্ভব হলে হাত ভাঁজ করে রাখুন, তারপর প্রায় ৫ বার সম্পূর্ণভাবে দাঁড়াতে ও বসতে বলুন।',
   'sitToStand.capturingTitle': 'রেকর্ড হচ্ছে…',
   'sitToStand.samplesCount': '{count}টি নমুনা',
+  'sitToStand.calibratingSquat': 'স্কোয়াটের ধরন ক্যালিব্রেট হচ্ছে — কয়েকটি ধীর, সম্পূর্ণ স্কোয়াট করুন… {elapsed}/{total} সে',
+  'sitToStand.repsAutoLabel': 'পুনরাবৃত্তি (স্বয়ংক্রিয়ভাবে সনাক্ত)',
+  'sitToStand.fullSquatLabel': 'সম্পূর্ণ',
+  'sitToStand.shallowSquatLabel': 'অগভীর',
   'sitToStand.resultTitle': 'ফলাফল',
   'sitToStand.repsTarget': '{count} (লক্ষ্যমাত্রা ~৫)',
   'sitToStand.continueToWalkTest': 'হাঁটা পরীক্ষায় যান',
@@ -137,6 +141,8 @@ export const bn: Record<MessageKey, string> = {
   'walkTest.startWalk': 'হাঁটা শুরু করুন',
   'walkTest.walkingTitle': 'হাঁটছে…',
   'walkTest.step': 'পদক্ষেপ',
+  'walkTest.autoStepsLabel': 'পদক্ষেপ (স্বয়ংক্রিয়ভাবে সনাক্ত)',
+  'walkTest.calibratingGait': 'হাঁটার ধরন ক্যালিব্রেট হচ্ছে — স্বাভাবিকভাবে হাঁটতে থাকুন… {elapsed}/{total} সে',
   'walkTest.pause': 'বিরতি',
   'walkTest.stopWalk': 'হাঁটা বন্ধ করুন',
   'walkTest.finishTitle': 'হাঁটা পরীক্ষা — শেষ ধাপ',

@@ -59,7 +59,7 @@ export const en = {
   'questionnaire.saveButton': 'Save questionnaire',
 
   // ---------------- Sensor pairing ----------------
-  'sensorPairing.title': 'Attach & calibrate sensors',
+  'sensorPairing.title': 'Attach & connect sensor',
   'sensorPairing.subtitle':
     'Attach the sensor to the outer shin, 8–12 cm below the knee, pointing toward the hip.',
   'sensorPairing.skipNotice':
@@ -133,6 +133,10 @@ export const en = {
     'Have the patient sit in a stable chair with the sensor attached, arms crossed if possible, then stand fully and sit back down at a steady pace for about 5 repetitions.',
   'sitToStand.capturingTitle': 'Capturing…',
   'sitToStand.samplesCount': '{count} samples',
+  'sitToStand.calibratingSquat': 'Calibrating squat pattern — do a few slow, full squats… {elapsed}/{total}s',
+  'sitToStand.repsAutoLabel': 'Reps (auto-detected)',
+  'sitToStand.fullSquatLabel': 'Full',
+  'sitToStand.shallowSquatLabel': 'Shallow',
   'sitToStand.resultTitle': 'Result',
   'sitToStand.repsTarget': '{count} (target ~5)',
   'sitToStand.continueToWalkTest': 'Continue to walking test',
@@ -146,6 +150,8 @@ export const en = {
   'walkTest.walkingTitle': 'Walking…',
   'walkTest.step': 'Step',
   'walkTest.pause': 'Pause',
+  'walkTest.autoStepsLabel': 'Steps (auto-detected)',
+  'walkTest.calibratingGait': 'Calibrating gait — keep walking normally… {elapsed}/{total}s',
   'walkTest.stopWalk': 'Stop walk',
   'walkTest.finishTitle': 'Walking test — finish up',
   'walkTest.finishSubtitle': 'Time {time}s · {steps} steps · {pauses} pause(s)',

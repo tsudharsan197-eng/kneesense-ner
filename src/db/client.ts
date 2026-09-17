@@ -45,11 +45,35 @@ async function openNativeDb(): Promise<DbHandle> {
   return conn;
 }
 
+/**
+ * schema.sql's CREATE TABLE IF NOT EXISTS only creates tables that don't
+ * exist yet — a column added to schema.sql after someone already has a
+ * local database (any existing install, not just fresh ones) never
+ * retroactively appears there, and every INSERT naming it then fails with
+ * "has no column named X". Each entry here is idempotent (checked via
+ * PRAGMA table_info before altering), so it's safe to run on every
+ * startup, on both backends, indefinitely — this is the only migration
+ * mechanism the app has, so new schema.sql columns need an entry added
+ * here too, not just the CREATE TABLE.
+ */
+async function addColumnIfMissing(handle: DbHandle, table: string, column: string, definition: string): Promise<void> {
+  const info = await handle.query(`PRAGMA table_info(${table})`);
+  const hasColumn = (info.values ?? []).some((row) => row.name === column);
+  if (!hasColumn) {
+    await handle.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+async function runMigrations(handle: DbHandle): Promise<void> {
+  await addColumnIfMissing(handle, 'exercise_captures', 'data_source', "TEXT NOT NULL DEFAULT 'ble'");
+}
+
 async function open(): Promise<DbHandle> {
   // Native (Android/iOS): real platform SQLite via @capacitor-community/sqlite.
   // Web (npm run dev / a plain browser build): sql.js directly — see
   // webAdapter.ts for why this bypasses that plugin's own web implementation.
   const handle = Capacitor.getPlatform() === 'web' ? await openWebDb(schemaSql) : await openNativeDb();
+  await runMigrations(handle);
   db = handle;
   return handle;
 }
